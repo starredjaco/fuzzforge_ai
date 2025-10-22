@@ -7,6 +7,36 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
+  validate-workers:
+    name: Validate Workers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run worker validation
+        run: |
+          chmod +x .github/scripts/validate-workers.sh
+          .github/scripts/validate-workers.sh
+
+  build-workers:
+    name: Build Worker Docker Images
+    runs-on: ubuntu-latest
+    # Only run if workers directory is modified
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.changed_files, 'workers/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build worker images
+        run: |
+          echo "Building worker Docker images..."
+          docker compose build worker-python worker-secrets worker-rust worker-android worker-ossfuzz --no-cache
+        continue-on-error: false
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -143,11 +173,15 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests]
+    needs: [validate-workers, lint, unit-tests]
     if: always()
     steps:
       - name: Check test results
         run: |
+          if [ "${{ needs.validate-workers.result }}" != "success" ]; then
+            echo "Worker validation failed"
+            exit 1
+          fi
           if [ "${{ needs.unit-tests.result }}" != "success" ]; then
             echo "Unit tests failed"
             exit 1
