@@ -273,8 +273,6 @@ class OpenGrepAndroid(BaseModule):
                 path_info = result.get("path", "")
                 start_line = result.get("start", {}).get("line", 0)
                 end_line = result.get("end", {}).get("line", 0)
-                start_col = result.get("start", {}).get("col", 0)
-                end_col = result.get("end", {}).get("col", 0)
 
                 # Code snippet
                 lines = extra.get("lines", "")

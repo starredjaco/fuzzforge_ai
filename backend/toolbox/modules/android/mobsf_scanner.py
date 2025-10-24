@@ -16,14 +16,11 @@ Performs static analysis on APK files including permissions, manifest analysis, 
 #
 # Additional attribution and requirements are provided in the NOTICE file.
 
-import asyncio
-import hashlib
-import json
 import logging
 import os
 from collections import Counter
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 import aiohttp
 
 try:

@@ -129,7 +129,6 @@ class AndroidStaticAnalysisWorkflow:
 
         # Handle case where workspace_path is a file (single APK upload)
         # vs. a directory containing files
-        from pathlib import Path
         workspace_path_obj = Path(workspace_path)
 
         # Determine actual workspace directory and APK path
