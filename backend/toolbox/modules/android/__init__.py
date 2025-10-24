@@ -19,7 +19,13 @@ Modules for Android application security testing:
 # Additional attribution and requirements are provided in the NOTICE file.
 
 from .jadx_decompiler import JadxDecompiler
-from .mobsf_scanner import MobSFScanner
 from .opengrep_android import OpenGrepAndroid
 
-__all__ = ["JadxDecompiler", "MobSFScanner", "OpenGrepAndroid"]
+# MobSF is optional (not available on ARM64 platform)
+try:
+    from .mobsf_scanner import MobSFScanner
+    __all__ = ["JadxDecompiler", "MobSFScanner", "OpenGrepAndroid"]
+except ImportError:
+    # MobSF dependencies not available (e.g., ARM64 platform)
+    MobSFScanner = None
+    __all__ = ["JadxDecompiler", "OpenGrepAndroid"]

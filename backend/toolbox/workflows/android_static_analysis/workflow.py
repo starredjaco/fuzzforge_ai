@@ -127,8 +127,31 @@ class AndroidStaticAnalysisWorkflow:
         )
         workflow.logger.info(f"✓ Target downloaded to: {workspace_path}")
 
-        # Determine APK path (default to first .apk file if not specified)
-        actual_apk_path = apk_path if apk_path else None
+        # Handle case where workspace_path is a file (single APK upload)
+        # vs. a directory containing files
+        from pathlib import Path
+        workspace_path_obj = Path(workspace_path)
+
+        # Determine actual workspace directory and APK path
+        if apk_path:
+            # User explicitly provided apk_path
+            actual_apk_path = apk_path
+            # workspace_path could be either a file or directory
+            # If it's a file and apk_path matches the filename, use parent as workspace
+            if workspace_path_obj.name == apk_path:
+                workspace_path = str(workspace_path_obj.parent)
+                workflow.logger.info(f"Adjusted workspace to parent directory: {workspace_path}")
+        else:
+            # No apk_path provided - check if workspace_path is an APK file
+            if workspace_path_obj.suffix.lower() == '.apk' or workspace_path_obj.name.endswith('.apk'):
+                # workspace_path is the APK file itself
+                actual_apk_path = workspace_path_obj.name
+                workspace_path = str(workspace_path_obj.parent)
+                workflow.logger.info(f"Detected single APK file: {actual_apk_path}, workspace: {workspace_path}")
+            else:
+                # workspace_path is a directory, need to find APK within it
+                actual_apk_path = None
+                workflow.logger.info("Workspace is a directory, APK detection will be handled by modules")
 
         # Phase 1: Jadx decompilation (if enabled and APK provided)
         jadx_result = None
