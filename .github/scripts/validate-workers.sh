@@ -47,8 +47,40 @@ for worker in $WORKERS; do
         continue
     fi
 
-    # Check required files
-    REQUIRED_FILES=("Dockerfile" "requirements.txt" "worker.py")
+    # Check Dockerfile (single file or multi-platform pattern)
+    if [ -f "$WORKER_DIR/Dockerfile" ]; then
+        # Single Dockerfile
+        if ! git ls-files --error-unmatch "$WORKER_DIR/Dockerfile" &> /dev/null; then
+            echo -e "${RED}  ❌ File not tracked by git: $WORKER_DIR/Dockerfile${NC}"
+            echo -e "${YELLOW}     Check .gitignore patterns!${NC}"
+            ERRORS=$((ERRORS + 1))
+        else
+            echo -e "${GREEN}  ✓ Dockerfile (tracked)${NC}"
+        fi
+    elif compgen -G "$WORKER_DIR/Dockerfile.*" > /dev/null; then
+        # Multi-platform Dockerfiles (e.g., Dockerfile.amd64, Dockerfile.arm64)
+        PLATFORM_DOCKERFILES=$(ls "$WORKER_DIR"/Dockerfile.* 2>/dev/null)
+        DOCKERFILE_FOUND=false
+        for dockerfile in $PLATFORM_DOCKERFILES; do
+            if git ls-files --error-unmatch "$dockerfile" &> /dev/null; then
+                echo -e "${GREEN}  ✓ $(basename "$dockerfile") (tracked)${NC}"
+                DOCKERFILE_FOUND=true
+            else
+                echo -e "${RED}  ❌ File not tracked by git: $dockerfile${NC}"
+                ERRORS=$((ERRORS + 1))
+            fi
+        done
+        if [ "$DOCKERFILE_FOUND" = false ]; then
+            echo -e "${RED}  ❌ No platform-specific Dockerfiles found${NC}"
+            ERRORS=$((ERRORS + 1))
+        fi
+    else
+        echo -e "${RED}  ❌ Missing Dockerfile or Dockerfile.* files${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check other required files
+    REQUIRED_FILES=("requirements.txt" "worker.py")
     for file in "${REQUIRED_FILES[@]}"; do
         FILE_PATH="$WORKER_DIR/$file"
 
