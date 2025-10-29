@@ -110,6 +110,13 @@ jobs:
             waited=$((waited + 5))
           done
 
+      - name: Initialize test projects
+        run: |
+          echo "Initializing test projects..."
+          cd test_projects/vulnerable_app && ff init --non-interactive || true
+          cd ../android_test && ff init --non-interactive || true
+          cd ../secret_detection_benchmark && ff init --non-interactive || true
+
       - name: Run fast workflow tests
         run: |
           python scripts/test_workflows.py --suite fast --skip-service-start
@@ -220,6 +227,11 @@ jobs:
           docker compose up -d
           sleep 30
 
+      - name: Initialize test projects
+        run: |
+          echo "Initializing test projects..."
+          cd test_projects/android_test && ff init --non-interactive || true
+
       - name: Run Android workflow test
         run: |
           python scripts/test_workflows.py \
@@ -281,6 +293,14 @@ jobs:
         run: |
           docker compose up -d
           sleep 30
+
+      - name: Initialize test projects
+        run: |
+          echo "Initializing test projects..."
+          cd test_projects/vulnerable_app && ff init --non-interactive || true
+          cd ../android_test && ff init --non-interactive || true
+          cd ../secret_detection_benchmark && ff init --non-interactive || true
+          cd ../rust_test && ff init --non-interactive || true
 
       - name: Run full workflow tests
         run: |
