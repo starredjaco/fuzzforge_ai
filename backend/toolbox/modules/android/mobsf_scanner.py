@@ -329,23 +329,47 @@ class MobSFScanner(BaseModule):
                         metadata_dict.get('severity', '').lower(), 'medium'
                     )
 
-                    files_list = finding_data.get('files', [])
-                    file_path = files_list[0] if files_list else None
+                    # MobSF returns 'files' as a dict: {filename: line_numbers}
+                    files_dict = finding_data.get('files', {})
 
-                    finding = self.create_finding(
-                        title=finding_name,
-                        description=metadata_dict.get('description', 'No description'),
-                        severity=severity,
-                        category="android-code-analysis",
-                        file_path=file_path,
-                        metadata={
-                            'cwe': metadata_dict.get('cwe'),
-                            'owasp': metadata_dict.get('owasp'),
-                            'files': files_list,
-                            'tool': 'mobsf',
-                        }
-                    )
-                    findings.append(finding)
+                    # Create a finding for each affected file
+                    if isinstance(files_dict, dict) and files_dict:
+                        for file_path, line_numbers in files_dict.items():
+                            finding = self.create_finding(
+                                title=finding_name,
+                                description=metadata_dict.get('description', 'No description'),
+                                severity=severity,
+                                category="android-code-analysis",
+                                file_path=file_path,
+                                line_number=line_numbers,  # Can be string like "28" or "65,81"
+                                metadata={
+                                    'cwe': metadata_dict.get('cwe'),
+                                    'owasp': metadata_dict.get('owasp'),
+                                    'masvs': metadata_dict.get('masvs'),
+                                    'cvss': metadata_dict.get('cvss'),
+                                    'ref': metadata_dict.get('ref'),
+                                    'line_numbers': line_numbers,
+                                    'tool': 'mobsf',
+                                }
+                            )
+                            findings.append(finding)
+                    else:
+                        # Fallback: create one finding without file info
+                        finding = self.create_finding(
+                            title=finding_name,
+                            description=metadata_dict.get('description', 'No description'),
+                            severity=severity,
+                            category="android-code-analysis",
+                            metadata={
+                                'cwe': metadata_dict.get('cwe'),
+                                'owasp': metadata_dict.get('owasp'),
+                                'masvs': metadata_dict.get('masvs'),
+                                'cvss': metadata_dict.get('cvss'),
+                                'ref': metadata_dict.get('ref'),
+                                'tool': 'mobsf',
+                            }
+                        )
+                        findings.append(finding)
 
         # Parse behavior analysis
         if 'behaviour' in scan_data:
@@ -359,19 +383,39 @@ class MobSFScanner(BaseModule):
                         metadata_dict.get('severity', '').lower(), 'medium'
                     )
 
-                    files_list = value.get('files', [])
+                    # MobSF returns 'files' as a dict: {filename: line_numbers}
+                    files_dict = value.get('files', {})
 
-                    finding = self.create_finding(
-                        title=f"Behavior: {label}",
-                        description=metadata_dict.get('description', 'No description'),
-                        severity=severity,
-                        category="android-behavior",
-                        metadata={
-                            'files': files_list,
-                            'tool': 'mobsf',
-                        }
-                    )
-                    findings.append(finding)
+                    # Create a finding for each affected file
+                    if isinstance(files_dict, dict) and files_dict:
+                        for file_path, line_numbers in files_dict.items():
+                            finding = self.create_finding(
+                                title=f"Behavior: {label}",
+                                description=metadata_dict.get('description', 'No description'),
+                                severity=severity,
+                                category="android-behavior",
+                                file_path=file_path,
+                                line_number=line_numbers,
+                                metadata={
+                                    'line_numbers': line_numbers,
+                                    'behavior_key': key,
+                                    'tool': 'mobsf',
+                                }
+                            )
+                            findings.append(finding)
+                    else:
+                        # Fallback: create one finding without file info
+                        finding = self.create_finding(
+                            title=f"Behavior: {label}",
+                            description=metadata_dict.get('description', 'No description'),
+                            severity=severity,
+                            category="android-behavior",
+                            metadata={
+                                'behavior_key': key,
+                                'tool': 'mobsf',
+                            }
+                        )
+                        findings.append(finding)
 
         logger.debug(f"Parsed {len(findings)} findings from MobSF results")
         return findings
