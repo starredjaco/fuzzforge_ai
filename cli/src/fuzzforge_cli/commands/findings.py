@@ -86,40 +86,62 @@ def get_findings(
             try:
                 db = ensure_project_db()
 
-                # Extract summary from SARIF
-                sarif_data = findings.sarif
-                runs_data = sarif_data.get("runs", [])
+                # Get findings data (API returns .sarif for now, will be native format later)
+                findings_data = findings.sarif
                 summary = {}
 
-                if runs_data:
-                    results = runs_data[0].get("results", [])
+                # Support both native format and SARIF format
+                if "findings" in findings_data:
+                    # Native FuzzForge format
+                    findings_list = findings_data.get("findings", [])
                     summary = {
-                        "total_issues": len(results),
+                        "total_issues": len(findings_list),
                         "by_severity": {},
                         "by_rule": {},
-                        "tools": []
+                        "by_source": {}
                     }
 
-                    for result in results:
-                        level = result.get("level", "note")
-                        rule_id = result.get("ruleId", "unknown")
+                    for finding in findings_list:
+                        severity = finding.get("severity", "info")
+                        rule_id = finding.get("rule_id", "unknown")
+                        module = finding.get("found_by", {}).get("module", "unknown")
 
-                        summary["by_severity"][level] = summary["by_severity"].get(level, 0) + 1
+                        summary["by_severity"][severity] = summary["by_severity"].get(severity, 0) + 1
                         summary["by_rule"][rule_id] = summary["by_rule"].get(rule_id, 0) + 1
+                        summary["by_source"][module] = summary["by_source"].get(module, 0) + 1
 
-                    # Extract tool info
-                    tool = runs_data[0].get("tool", {})
-                    driver = tool.get("driver", {})
-                    if driver.get("name"):
-                        summary["tools"].append({
-                            "name": driver.get("name"),
-                            "version": driver.get("version"),
-                            "rules": len(driver.get("rules", []))
-                        })
+                elif "runs" in findings_data:
+                    # SARIF format (backward compatibility)
+                    runs_data = findings_data.get("runs", [])
+                    if runs_data:
+                        results = runs_data[0].get("results", [])
+                        summary = {
+                            "total_issues": len(results),
+                            "by_severity": {},
+                            "by_rule": {},
+                            "tools": []
+                        }
+
+                        for result in results:
+                            level = result.get("level", "note")
+                            rule_id = result.get("ruleId", "unknown")
+
+                            summary["by_severity"][level] = summary["by_severity"].get(level, 0) + 1
+                            summary["by_rule"][rule_id] = summary["by_rule"].get(rule_id, 0) + 1
+
+                        # Extract tool info
+                        tool = runs_data[0].get("tool", {})
+                        driver = tool.get("driver", {})
+                        if driver.get("name"):
+                            summary["tools"].append({
+                                "name": driver.get("name"),
+                                "version": driver.get("version"),
+                                "rules": len(driver.get("rules", []))
+                            })
 
                 finding_record = FindingRecord(
                     run_id=run_id,
-                    sarif_data=sarif_data,
+                    findings_data=findings_data,
                     summary=summary,
                     created_at=datetime.now()
                 )
@@ -174,9 +196,9 @@ def show_finding(
             with get_client() as client:
                 console.print(f"🔍 Fetching findings for run: {run_id}")
                 findings = client.get_run_findings(run_id)
-                findings_dict = findings.sarif  # Will become native format
+                findings_dict = findings.sarif  # API still returns .sarif for now
         else:
-            findings_dict = findings_data.sarif_data  # Will become findings_data
+            findings_dict = findings_data.findings_data
 
         # Find the specific finding by unique ID
         # For now, support both SARIF (old) and native format (new)
@@ -239,9 +261,9 @@ def show_findings_by_rule(
             with get_client() as client:
                 console.print(f"🔍 Fetching findings for run: {run_id}")
                 findings = client.get_run_findings(run_id)
-                findings_dict = findings.sarif
+                findings_dict = findings.sarif  # API still returns .sarif for now
         else:
-            findings_dict = findings_data.sarif_data
+            findings_dict = findings_data.findings_data
 
         # Find all findings matching the rule
         matching_findings = []
