@@ -46,7 +46,7 @@ class FindingRecord(BaseModel):
     """Database record for findings"""
     id: Optional[int] = None
     run_id: str
-    sarif_data: Dict[str, Any]
+    findings_data: Dict[str, Any]  # Native FuzzForge format
     summary: Dict[str, Any] = {}
     created_at: datetime
 
@@ -81,7 +81,7 @@ class FuzzForgeDatabase:
     CREATE TABLE IF NOT EXISTS findings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id TEXT NOT NULL,
-        sarif_data TEXT NOT NULL,
+        findings_data TEXT NOT NULL,
         summary TEXT DEFAULT '{}',
         created_at TIMESTAMP NOT NULL,
         FOREIGN KEY (run_id) REFERENCES runs (run_id)
@@ -292,21 +292,21 @@ class FuzzForgeDatabase:
     # Findings management methods
 
     def save_findings(self, finding: FindingRecord) -> int:
-        """Save findings and return the ID"""
+        """Save findings in native FuzzForge format and return the ID"""
         with self.connection() as conn:
             cursor = conn.execute("""
-                INSERT INTO findings (run_id, sarif_data, summary, created_at)
+                INSERT INTO findings (run_id, findings_data, summary, created_at)
                 VALUES (?, ?, ?, ?)
             """, (
                 finding.run_id,
-                json.dumps(finding.sarif_data),
+                json.dumps(finding.findings_data),
                 json.dumps(finding.summary),
                 finding.created_at
             ))
             return cursor.lastrowid
 
     def get_findings(self, run_id: str) -> Optional[FindingRecord]:
-        """Get findings for a run"""
+        """Get findings for a run in native FuzzForge format"""
         with self.connection() as conn:
             row = conn.execute(
                 "SELECT * FROM findings WHERE run_id = ? ORDER BY created_at DESC LIMIT 1",
@@ -317,14 +317,14 @@ class FuzzForgeDatabase:
                 return FindingRecord(
                     id=row["id"],
                     run_id=row["run_id"],
-                    sarif_data=json.loads(row["sarif_data"]),
+                    findings_data=json.loads(row["findings_data"]),
                     summary=json.loads(row["summary"]),
                     created_at=row["created_at"]
                 )
             return None
 
     def list_findings(self, limit: int = 50) -> List[FindingRecord]:
-        """List recent findings"""
+        """List recent findings in native FuzzForge format"""
         with self.connection() as conn:
             rows = conn.execute("""
                 SELECT * FROM findings
@@ -336,7 +336,7 @@ class FuzzForgeDatabase:
                 FindingRecord(
                     id=row["id"],
                     run_id=row["run_id"],
-                    sarif_data=json.loads(row["sarif_data"]),
+                    findings_data=json.loads(row["findings_data"]),
                     summary=json.loads(row["summary"]),
                     created_at=row["created_at"]
                 )
@@ -380,18 +380,17 @@ class FuzzForgeDatabase:
                     finding = FindingRecord(
                         id=row["id"],
                         run_id=row["run_id"],
-                        sarif_data=json.loads(row["sarif_data"]),
+                        findings_data=json.loads(row["findings_data"]),
                         summary=json.loads(row["summary"]),
                         created_at=row["created_at"]
                     )
 
-                    # Filter by severity if specified
+                    # Filter by severity if specified (native format)
                     if severity:
                         finding_severities = set()
-                        if "runs" in finding.sarif_data:
-                            for run in finding.sarif_data["runs"]:
-                                for result in run.get("results", []):
-                                    finding_severities.add(result.get("level", "note").lower())
+                        if "findings" in finding.findings_data:
+                            for f in finding.findings_data["findings"]:
+                                finding_severities.add(f.get("severity", "info").lower())
 
                         if not any(sev.lower() in finding_severities for sev in severity):
                             continue
@@ -408,7 +407,7 @@ class FuzzForgeDatabase:
         return self.get_all_findings(workflow=workflow)
 
     def get_aggregated_stats(self) -> Dict[str, Any]:
-        """Get aggregated statistics for all findings using SQL aggregation"""
+        """Get aggregated statistics for all findings using native format and SQL aggregation"""
         with self.connection() as conn:
             # Total findings and runs
             total_findings = conn.execute("SELECT COUNT(*) FROM findings").fetchone()[0]
@@ -429,39 +428,38 @@ class FuzzForgeDatabase:
                 WHERE created_at > datetime('now', '-7 days')
             """).fetchone()[0]
 
-            # Use SQL JSON functions to aggregate severity stats efficiently
+            # Use SQL JSON functions to aggregate severity stats efficiently (native format)
             # This avoids loading all findings into memory
             severity_stats = conn.execute("""
                 SELECT
-                    SUM(json_array_length(json_extract(sarif_data, '$.runs[0].results'))) as total_issues,
+                    SUM(json_array_length(json_extract(findings_data, '$.findings'))) as total_issues,
                     COUNT(*) as finding_count
                 FROM findings
-                WHERE json_extract(sarif_data, '$.runs[0].results') IS NOT NULL
+                WHERE json_extract(findings_data, '$.findings') IS NOT NULL
             """).fetchone()
 
             total_issues = severity_stats["total_issues"] or 0
 
-            # Get severity distribution using SQL
+            # Get severity distribution using native format (critical/high/medium/low/info)
             # Note: This is a simplified version - for full accuracy we'd need JSON parsing
             # But it's much more efficient than loading all data into Python
-            severity_counts = {"error": 0, "warning": 0, "note": 0, "info": 0}
+            severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
 
             # Sample the first N findings for severity distribution
             # This gives a good approximation without loading everything
             sample_findings = conn.execute("""
-                SELECT sarif_data
+                SELECT findings_data
                 FROM findings
                 LIMIT ?
             """, (STATS_SAMPLE_SIZE,)).fetchall()
 
             for row in sample_findings:
                 try:
-                    data = json.loads(row["sarif_data"])
-                    if "runs" in data:
-                        for run in data["runs"]:
-                            for result in run.get("results", []):
-                                level = result.get("level", "note").lower()
-                                severity_counts[level] = severity_counts.get(level, 0) + 1
+                    data = json.loads(row["findings_data"])
+                    if "findings" in data:
+                        for finding in data["findings"]:
+                            severity = finding.get("severity", "info").lower()
+                            severity_counts[severity] = severity_counts.get(severity, 0) + 1
                 except (json.JSONDecodeError, KeyError):
                     continue
 
