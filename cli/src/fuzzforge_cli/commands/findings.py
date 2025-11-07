@@ -1115,18 +1115,18 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             location_str += f":{line_start}"
 
         severity_badge = {
-            "critical": '<span class="badge bg-danger">CRITICAL</span>',
-            "high": '<span class="badge bg-danger">HIGH</span>',
-            "medium": '<span class="badge bg-warning text-dark">MEDIUM</span>',
-            "low": '<span class="badge bg-info text-dark">LOW</span>',
-            "info": '<span class="badge bg-secondary">INFO</span>'
-        }.get(severity, '<span class="badge bg-secondary">INFO</span>')
+            "critical": '<span class="badge badge-critical">CRITICAL</span>',
+            "high": '<span class="badge badge-high">HIGH</span>',
+            "medium": '<span class="badge badge-medium">MEDIUM</span>',
+            "low": '<span class="badge badge-low">LOW</span>',
+            "info": '<span class="badge badge-info">INFO</span>'
+        }.get(severity, '<span class="badge badge-info">INFO</span>')
 
         confidence_badge = {
-            "high": '<span class="badge bg-success">High</span>',
-            "medium": '<span class="badge bg-warning text-dark">Medium</span>',
-            "low": '<span class="badge bg-danger">Low</span>'
-        }.get(confidence, '<span class="badge bg-secondary">Medium</span>')
+            "high": '<span class="badge badge-confidence">High</span>',
+            "medium": '<span class="badge badge-confidence">Medium</span>',
+            "low": '<span class="badge badge-confidence">Low</span>'
+        }.get(confidence, '<span class="badge badge-confidence">Medium</span>')
 
         type_icon = {
             "llm": "🤖",
@@ -1138,33 +1138,31 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         # Build details HTML
         details_html = f"""
         <div class="finding-details" id="details-{idx}" style="display:none;">
-            <div class="card mt-2">
-                <div class="card-body">
-                    <h6>Description</h6>
-                    <p>{description}</p>
+            <div class="details-card">
+                <h6>Description</h6>
+                <p>{description}</p>
 
-                    {f'<h6>Code Snippet</h6><pre><code>{code_snippet}</code></pre>' if code_snippet else ''}
+                {f'<h6>Code Snippet</h6><pre><code>{code_snippet}</code></pre>' if code_snippet else ''}
 
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <h6>Classification</h6>
-                            <p><strong>Category:</strong> {category}</p>
-                            {f'<p><strong>CWE:</strong> {cwe}</p>' if cwe else ''}
-                            {f'<p><strong>OWASP:</strong> {owasp}</p>' if owasp else ''}
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Detection</h6>
-                            <p><strong>Module:</strong> {module}</p>
-                            <p><strong>Tool:</strong> {tool_name}</p>
-                            <p><strong>Type:</strong> {type_icon} {detection_type}</p>
-                            <p><strong>Confidence:</strong> {confidence_badge}</p>
-                        </div>
+                <div class="details-grid">
+                    <div>
+                        <h6>Classification</h6>
+                        <p><strong>Category:</strong> {category}</p>
+                        {f'<p><strong>CWE:</strong> {cwe}</p>' if cwe else ''}
+                        {f'<p><strong>OWASP:</strong> {owasp}</p>' if owasp else ''}
                     </div>
-
-                    {f'<div class="mt-3"><h6>LLM Detection Context</h6><p><strong>Model:</strong> {llm_model}</p><p><strong>Prompt:</strong> {llm_prompt_preview}</p></div>' if llm_model else ''}
-
-                    {f'<div class="mt-3"><h6>Recommendation</h6><p>{recommendation}</p></div>' if recommendation else ''}
+                    <div>
+                        <h6>Detection</h6>
+                        <p><strong>Module:</strong> {module}</p>
+                        <p><strong>Tool:</strong> {tool_name}</p>
+                        <p><strong>Type:</strong> {type_icon} {detection_type}</p>
+                        <p><strong>Confidence:</strong> {confidence_badge}</p>
+                    </div>
                 </div>
+
+                {f'<div class="mt-3"><h6>LLM Detection Context</h6><p><strong>Model:</strong> {llm_model}</p><p><strong>Prompt:</strong> {llm_prompt_preview}</p></div>' if llm_model else ''}
+
+                {f'<div class="mt-3"><h6>Recommendation</h6><p>{recommendation}</p></div>' if recommendation else ''}
             </div>
         </div>
         """
@@ -1190,273 +1188,649 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Findings Report - {run_id}</title>
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-
     <style>
+        /* FuzzForge Design System - Color Palette */
         :root {{
-            --critical: #dc3545;
-            --high: #dc3545;
-            --medium: #ffc107;
-            --low: #0dcaf0;
-            --info: #6c757d;
+            /* Base Background */
+            --bg-base: #111427;
+            --bg-card: rgba(31, 37, 60, 0.8);
+            --bg-card-elevated: rgba(31, 37, 60, 0.9);
+            --bg-card-hover: rgba(31, 37, 60, 0.95);
+
+            /* Border Colors */
+            --border-default: #374151;
+            --border-hover: #4b5563;
+            --border-subtle: rgba(55, 65, 81, 0.5);
+
+            /* Text Colors */
+            --text-primary: #e5e7eb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --text-muted: #6b7280;
+
+            /* Brand Colors - Indigo/Violet Gradient */
+            --brand-indigo: #6366f1;
+            --brand-violet: #8b5cf6;
+            --brand-pink: #ec4899;
+
+            /* Severity Colors */
+            --critical-bg: rgba(239, 68, 68, 0.1);
+            --critical-border: rgba(239, 68, 68, 0.4);
+            --critical-text: #fca5a5;
+            --critical-badge-bg: rgba(239, 68, 68, 0.2);
+            --critical-badge-text: #fca5a5;
+
+            --high-bg: rgba(249, 115, 22, 0.1);
+            --high-border: rgba(249, 115, 22, 0.4);
+            --high-text: #fdba74;
+            --high-badge-bg: rgba(249, 115, 22, 0.2);
+            --high-badge-text: #fdba74;
+
+            --medium-bg: rgba(234, 179, 8, 0.1);
+            --medium-border: rgba(234, 179, 8, 0.4);
+            --medium-text: #fde047;
+            --medium-badge-bg: rgba(234, 179, 8, 0.2);
+            --medium-badge-text: #fde047;
+
+            --low-bg: rgba(59, 130, 246, 0.1);
+            --low-border: rgba(59, 130, 246, 0.4);
+            --low-text: #93c5fd;
+            --low-badge-bg: rgba(59, 130, 246, 0.2);
+            --low-badge-text: #93c5fd;
+
+            --info-bg: rgba(107, 114, 128, 0.1);
+            --info-border: rgba(107, 114, 128, 0.4);
+            --info-text: #d1d5db;
+            --info-badge-bg: rgba(107, 114, 128, 0.2);
+            --info-badge-text: #d1d5db;
+
+            /* Syntax Highlighting Colors */
+            --syntax-comment: #6b7280;
+            --syntax-keyword: #f97316;
+            --syntax-string: #10b981;
+            --syntax-number: #3b82f6;
+            --syntax-function: #a78bfa;
+            --syntax-type: #f59e0b;
+            --syntax-attribute: #06b6d4;
+        }}
+
+        /* Reset & Base Styles */
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }}
 
         body {{
-            background-color: #f8f9fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.6;
             padding-bottom: 50px;
+            position: relative;
+            overflow-x: hidden;
         }}
 
+        /* Background Gradients - FuzzForge Ambient Glow */
+        body::before {{
+            content: '';
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }}
+
+        body::after {{
+            content: '';
+            position: fixed;
+            bottom: -20%;
+            left: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }}
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {{
+            font-weight: 700;
+            color: var(--text-primary);
+        }}
+
+        h1 {{
+            font-size: 3rem;
+            line-height: 1.1;
+        }}
+
+        h2 {{
+            font-size: 1.875rem;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }}
+
+        h5 {{
+            font-size: 1.125rem;
+            font-weight: 600;
+        }}
+
+        h6 {{
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }}
+
+        p {{
+            color: var(--text-secondary);
+        }}
+
+        code, pre {{
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }}
+
+        /* Header Section */
         .header-section {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, var(--brand-indigo) 0%, var(--brand-violet) 100%);
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
         }}
 
+        .header-content {{
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }}
+
+        .header-title {{
+            background: linear-gradient(to right, #e0e7ff, #ddd6fe, #fce7f3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }}
+
+        .header-subtitle {{
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.25rem;
+        }}
+
+        .header-meta {{
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+        }}
+
+        /* Container */
+        .container {{
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
+        }}
+
+        /* Grid System */
+        .row {{
+            display: flex;
+            flex-wrap: wrap;
+            margin: -0.75rem;
+        }}
+
+        .col {{
+            padding: 0.75rem;
+        }}
+
+        .col-12 {{ width: 100%; }}
+        .col-6 {{ width: 50%; }}
+        .col-3 {{ width: 25%; }}
+
+        @media (max-width: 768px) {{
+            .col-6, .col-3 {{ width: 100%; }}
+        }}
+
+        /* Card Styles - Glass Morphism */
+        .card {{
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-default);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }}
+
+        .card-elevated {{
+            background: var(--bg-card-elevated);
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }}
+
+        /* Stat Cards */
         .stat-card {{
-            transition: transform 0.2s;
+            text-align: center;
+            transition: transform 0.2s ease;
+            cursor: default;
         }}
 
         .stat-card:hover {{
             transform: translateY(-5px);
+            background: var(--bg-card-hover);
         }}
 
-        .finding-row {{
-            cursor: pointer;
-            transition: background-color 0.2s;
+        .stat-number {{
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
         }}
 
-        .finding-row:hover {{
-            background-color: #f8f9fa;
+        .stat-label {{
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }}
 
+        .stat-critical {{ color: var(--critical-text); }}
+        .stat-medium {{ color: var(--medium-text); }}
+        .stat-low {{ color: var(--low-text); }}
+
+        /* Chart Container */
         .chart-container {{
             position: relative;
             height: 300px;
+            margin-top: 1rem;
         }}
 
+        /* Section Title */
+        .section-title {{
+            font-size: 1.875rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }}
+
+        /* Filters */
         .filters {{
-            position: sticky;
-            top: 20px;
-            z-index: 100;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
         }}
 
-        pre {{
-            background-color: #2d2d2d;
-            padding: 15px;
-            border-radius: 5px;
+        .filter-input {{
+            flex: 1;
+            min-width: 200px;
+            background: rgba(31, 37, 60, 0.6);
+            border: 1px solid var(--border-default);
+            border-radius: 0.5rem;
+            padding: 0.625rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }}
+
+        .filter-input:focus {{
+            outline: none;
+            border-color: var(--brand-indigo);
+            background: rgba(31, 37, 60, 0.8);
+        }}
+
+        .filter-select {{
+            background: rgba(31, 37, 60, 0.6);
+            border: 1px solid var(--border-default);
+            border-radius: 0.5rem;
+            padding: 0.625rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 150px;
+        }}
+
+        .filter-select:focus {{
+            outline: none;
+            border-color: var(--brand-indigo);
+        }}
+
+        .btn {{
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--brand-indigo);
+            border-radius: 0.5rem;
+            padding: 0.625rem 1.5rem;
+            color: var(--brand-indigo);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }}
+
+        .btn:hover {{
+            background: rgba(99, 102, 241, 0.25);
+            border-color: var(--brand-violet);
+            color: var(--brand-violet);
+        }}
+
+        /* Table Styles */
+        .table-container {{
             overflow-x: auto;
+            border-radius: 0.5rem;
+        }}
+
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+        }}
+
+        thead th {{
+            background: rgba(31, 37, 60, 0.8);
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-default);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }}
+
+        thead th:hover {{
+            color: var(--brand-indigo);
+        }}
+
+        tbody tr.finding-row {{
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }}
+
+        tbody tr.finding-row:hover {{
+            background: rgba(99, 102, 241, 0.05);
+        }}
+
+        tbody td {{
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }}
+
+        /* Severity Badges */
+        .badge {{
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }}
+
+        .badge-critical {{
+            background: var(--critical-badge-bg);
+            color: var(--critical-badge-text);
+            border: 1px solid var(--critical-border);
+        }}
+
+        .badge-high {{
+            background: var(--high-badge-bg);
+            color: var(--high-badge-text);
+            border: 1px solid var(--high-border);
+        }}
+
+        .badge-medium {{
+            background: var(--medium-badge-bg);
+            color: var(--medium-badge-text);
+            border: 1px solid var(--medium-border);
+        }}
+
+        .badge-low {{
+            background: var(--low-badge-bg);
+            color: var(--low-badge-text);
+            border: 1px solid var(--low-border);
+        }}
+
+        .badge-info {{
+            background: var(--info-badge-bg);
+            color: var(--info-badge-text);
+            border: 1px solid var(--info-border);
+        }}
+
+        .badge-confidence {{
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--brand-indigo);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }}
+
+        /* Finding Details */
+        .finding-details {{
+            background: rgba(17, 20, 39, 0.5);
+            border-top: 1px solid var(--border-subtle);
+        }}
+
+        .details-card {{
+            background: rgba(31, 37, 60, 0.6);
+            border: 1px solid var(--border-default);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1rem;
+        }}
+
+        .details-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }}
+
+        /* Code Blocks */
+        pre {{
+            background: rgba(17, 20, 39, 0.8);
+            border: 1px solid var(--border-default);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
         }}
 
         code {{
-            color: #f8f8f2;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
         }}
 
-        .dark-mode {{
-            background-color: #1a1a1a;
-            color: #f8f9fa;
-        }}
+        /* Syntax Highlighting */
+        .token.comment {{ color: var(--syntax-comment); }}
+        .token.keyword {{ color: var(--syntax-keyword); }}
+        .token.string {{ color: var(--syntax-string); }}
+        .token.number {{ color: var(--syntax-number); }}
+        .token.function {{ color: var(--syntax-function); }}
+        .token.class-name {{ color: var(--syntax-type); }}
+        .token.attr-name {{ color: var(--syntax-attribute); }}
 
-        .dark-mode .card {{
-            background-color: #2d2d2d;
-            color: #f8f9fa;
-        }}
+        /* Utilities */
+        .mb-0 {{ margin-bottom: 0; }}
+        .mb-1 {{ margin-bottom: 0.5rem; }}
+        .mb-2 {{ margin-bottom: 1rem; }}
+        .mb-3 {{ margin-bottom: 1.5rem; }}
+        .mb-4 {{ margin-bottom: 2rem; }}
+        .mt-2 {{ margin-top: 1rem; }}
+        .mt-3 {{ margin-top: 1.5rem; }}
+        .text-center {{ text-align: center; }}
 
+        /* Print Styles */
         @media print {{
-            .filters, .no-print {{
-                display: none !important;
-            }}
+            body::before, body::after {{ display: none; }}
+            .filters, .no-print {{ display: none !important; }}
+            .card {{ box-shadow: none; border: 1px solid #ddd; }}
         }}
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header-section">
-        <div class="container">
-            <h1><i class="bi bi-shield-check"></i> Security Findings Report</h1>
-            <p class="lead mb-1">{workflow}</p>
-            <p class="mb-0"><strong>Run ID:</strong> {run_id} | <strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <div class="header-content">
+            <h1 class="header-title">Security Findings Report</h1>
+            <p class="header-subtitle">{workflow}</p>
+            <p class="header-meta"><strong>Run ID:</strong> {run_id} | <strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
     </div>
 
     <div class="container">
         <!-- Executive Summary -->
+        <h2 class="section-title">Executive Summary</h2>
         <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="mb-3">📊 Executive Summary</h2>
-            </div>
-
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card stat-card text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <h3 class="display-4">{total_findings}</h3>
-                        <p class="text-muted mb-0">Total Findings</p>
-                    </div>
+            <div class="col col-3">
+                <div class="card stat-card">
+                    <div class="stat-number">{total_findings}</div>
+                    <div class="stat-label">Total Findings</div>
                 </div>
             </div>
 
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card stat-card text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <h3 class="display-4 text-danger">{severity_counts['critical'] + severity_counts['high']}</h3>
-                        <p class="text-muted mb-0">Critical + High</p>
-                    </div>
+            <div class="col col-3">
+                <div class="card stat-card">
+                    <div class="stat-number stat-critical">{severity_counts['critical'] + severity_counts['high']}</div>
+                    <div class="stat-label">Critical + High</div>
                 </div>
             </div>
 
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card stat-card text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <h3 class="display-4 text-warning">{severity_counts['medium']}</h3>
-                        <p class="text-muted mb-0">Medium</p>
-                    </div>
+            <div class="col col-3">
+                <div class="card stat-card">
+                    <div class="stat-number stat-medium">{severity_counts['medium']}</div>
+                    <div class="stat-label">Medium</div>
                 </div>
             </div>
 
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card stat-card text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <h3 class="display-4 text-info">{severity_counts['low'] + severity_counts['info']}</h3>
-                        <p class="text-muted mb-0">Low + Info</p>
-                    </div>
+            <div class="col col-3">
+                <div class="card stat-card">
+                    <div class="stat-number stat-low">{severity_counts['low'] + severity_counts['info']}</div>
+                    <div class="stat-label">Low + Info</div>
                 </div>
             </div>
         </div>
 
         <!-- Charts -->
+        <h2 class="section-title mt-3">Analysis</h2>
         <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Severity Distribution</h5>
-                        <div class="chart-container">
-                            <canvas id="severityChart"></canvas>
-                        </div>
+            <div class="col col-6">
+                <div class="card">
+                    <h5>Severity Distribution</h5>
+                    <div class="chart-container">
+                        <canvas id="severityChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Detection Type</h5>
-                        <div class="chart-container">
-                            <canvas id="typeChart"></canvas>
-                        </div>
+            <div class="col col-6">
+                <div class="card">
+                    <h5>Detection Type</h5>
+                    <div class="chart-container">
+                        <canvas id="typeChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Top Categories</h5>
-                        <div class="chart-container">
-                            <canvas id="categoryChart"></canvas>
-                        </div>
+            <div class="col col-6">
+                <div class="card">
+                    <h5>Top Categories</h5>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Findings by Source</h5>
-                        <div class="chart-container">
-                            <canvas id="sourceChart"></canvas>
-                        </div>
+            <div class="col col-6">
+                <div class="card">
+                    <h5>Findings by Source</h5>
+                    <div class="chart-container">
+                        <canvas id="sourceChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Filters & Findings Table -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">🔍 Detailed Findings</h5>
-
-                        <!-- Filters -->
-                        <div class="row mb-3 no-print">
-                            <div class="col-md-3 mb-2">
-                                <select class="form-select" id="severityFilter" onchange="applyFilters()">
-                                    <option value="">All Severities</option>
-                                    <option value="critical">Critical</option>
-                                    <option value="high">High</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
-                                    <option value="info">Info</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <select class="form-select" id="typeFilter" onchange="applyFilters()">
-                                    <option value="">All Types</option>
-                                    <option value="llm">🤖 LLM</option>
-                                    <option value="tool">🔧 Tool</option>
-                                    <option value="fuzzer">🎯 Fuzzer</option>
-                                    <option value="manual">👤 Manual</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <input type="text" class="form-control" id="searchInput" placeholder="Search findings..." onkeyup="applyFilters()">
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
-                            </div>
-                        </div>
-
-                        <!-- Table -->
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th onclick="sortTable(0)" style="cursor: pointer;">ID</th>
-                                        <th onclick="sortTable(1)" style="cursor: pointer;">Severity</th>
-                                        <th onclick="sortTable(2)" style="cursor: pointer;">Finding</th>
-                                        <th onclick="sortTable(3)" style="cursor: pointer;">Source</th>
-                                        <th onclick="sortTable(4)" style="cursor: pointer;">Location</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="findingsTable">
-                                    {findings_rows}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <p class="text-muted mt-3">
-                            <span id="visibleCount">{total_findings}</span> of {total_findings} findings shown.
-                            Click on a row to view details.
-                        </p>
-                    </div>
-                </div>
+        <h2 class="section-title mt-3">Detailed Findings</h2>
+        <div class="card">
+            <!-- Filters -->
+            <div class="filters no-print">
+                <select class="filter-select" id="severityFilter" onchange="applyFilters()">
+                    <option value="">All Severities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="info">Info</option>
+                </select>
+                <select class="filter-select" id="typeFilter" onchange="applyFilters()">
+                    <option value="">All Types</option>
+                    <option value="llm">🤖 LLM</option>
+                    <option value="tool">🔧 Tool</option>
+                    <option value="fuzzer">🎯 Fuzzer</option>
+                    <option value="manual">👤 Manual</option>
+                </select>
+                <input type="text" class="filter-input" id="searchInput" placeholder="Search findings..." onkeyup="applyFilters()">
+                <button class="btn" onclick="resetFilters()">Reset</button>
             </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">ID</th>
+                            <th onclick="sortTable(1)">Severity</th>
+                            <th onclick="sortTable(2)">Finding</th>
+                            <th onclick="sortTable(3)">Source</th>
+                            <th onclick="sortTable(4)">Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="findingsTable">
+                        {findings_rows}
+                    </tbody>
+                </table>
+            </div>
+
+            <p style="color: var(--text-tertiary); font-size: 0.875rem; margin-top: 1rem;">
+                <span id="visibleCount">{total_findings}</span> of {total_findings} findings shown.
+                Click on a row to view details.
+            </p>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        // Chart.js setup
+        // Chart.js setup with FuzzForge colors
         const chartColors = {{
-            critical: '#dc3545',
-            high: '#dc3545',
-            medium: '#ffc107',
-            low: '#0dcaf0',
-            info: '#6c757d'
+            critical: '#fca5a5',
+            high: '#fdba74',
+            medium: '#fde047',
+            low: '#93c5fd',
+            info: '#d1d5db'
         }};
+
+        // Chart.js defaults for dark theme
+        Chart.defaults.color = '#d1d5db';
+        Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.5)';
 
         // Severity Chart
         new Chart(document.getElementById('severityChart'), {{
@@ -1466,13 +1840,22 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                 datasets: [{{
                     data: {list(severity_data.values())},
                     backgroundColor: {[f"chartColors['{k}']" for k in severity_data.keys()]},
+                    borderWidth: 2,
+                    borderColor: '#111427'
                 }}]
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {{
-                    legend: {{ position: 'bottom' }}
+                    legend: {{
+                        position: 'bottom',
+                        labels: {{
+                            color: '#d1d5db',
+                            padding: 15,
+                            font: {{ family: 'Inter', size: 12 }}
+                        }}
+                    }}
                 }}
             }}
         }});
@@ -1484,14 +1867,23 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                 labels: {list(type_data.keys())},
                 datasets: [{{
                     data: {list(type_data.values())},
-                    backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
+                    backgroundColor: ['#6366f1', '#8b5cf6', '#a78bfa', '#c084fc'],
+                    borderWidth: 2,
+                    borderColor: '#111427'
                 }}]
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {{
-                    legend: {{ position: 'bottom' }}
+                    legend: {{
+                        position: 'bottom',
+                        labels: {{
+                            color: '#d1d5db',
+                            padding: 15,
+                            font: {{ family: 'Inter', size: 12 }}
+                        }}
+                    }}
                 }}
             }}
         }});
@@ -1504,7 +1896,8 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                 datasets: [{{
                     label: 'Findings',
                     data: {list(category_data.values())},
-                    backgroundColor: '#667eea'
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4
                 }}]
             }},
             options: {{
@@ -1514,7 +1907,15 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                     legend: {{ display: false }}
                 }},
                 scales: {{
-                    y: {{ beginAtZero: true }}
+                    y: {{
+                        beginAtZero: true,
+                        ticks: {{ color: '#9ca3af', font: {{ family: 'Inter' }} }},
+                        grid: {{ color: 'rgba(55, 65, 81, 0.3)' }}
+                    }},
+                    x: {{
+                        ticks: {{ color: '#9ca3af', font: {{ family: 'Inter' }} }},
+                        grid: {{ color: 'rgba(55, 65, 81, 0.3)' }}
+                    }}
                 }}
             }}
         }});
@@ -1527,7 +1928,8 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                 datasets: [{{
                     label: 'Findings',
                     data: {list(source_data.values())},
-                    backgroundColor: '#764ba2'
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 4
                 }}]
             }},
             options: {{
@@ -1538,7 +1940,15 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                     legend: {{ display: false }}
                 }},
                 scales: {{
-                    x: {{ beginAtZero: true }}
+                    x: {{
+                        beginAtZero: true,
+                        ticks: {{ color: '#9ca3af', font: {{ family: 'Inter' }} }},
+                        grid: {{ color: 'rgba(55, 65, 81, 0.3)' }}
+                    }},
+                    y: {{
+                        ticks: {{ color: '#9ca3af', font: {{ family: 'Inter' }} }},
+                        grid: {{ color: 'rgba(55, 65, 81, 0.3)' }}
+                    }}
                 }}
             }}
         }});
