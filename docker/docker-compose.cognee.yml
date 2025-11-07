@@ -12,10 +12,7 @@ services:
       GRAPH_DATABASE_PROVIDER: ladybug
       ENABLE_BACKEND_ACCESS_CONTROL: "true"
       STORAGE_BACKEND: s3
-      STORAGE_BUCKET_NAME: ${COGNEE_S3_BUCKET:-cognee}
-      DATA_ROOT_DIRECTORY: s3://${COGNEE_S3_BUCKET:-cognee}/${COGNEE_S3_PREFIX:-projects}
-      SYSTEM_ROOT_DIRECTORY: s3://${COGNEE_S3_BUCKET:-cognee}/${COGNEE_S3_PREFIX:-projects}
-      CACHE_ROOT_DIRECTORY: s3://${COGNEE_S3_BUCKET:-cognee}/${COGNEE_S3_PREFIX:-projects}/cache
+      STORAGE_BUCKET_NAME: ${COGNEE_S3_BUCKET:-projects}
       DB_PROVIDER: sqlite
       DB_PATH: /data/relational
       DB_NAME: cognee.db

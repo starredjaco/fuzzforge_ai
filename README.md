@@ -197,7 +197,7 @@ ff workflow run security_assessment .    # Start workflow - CLI uploads files au
 Uploading files into MinIO automatically streams them into Cognee:
 
 ```
-s3://cognee/projects/<project-id>/
+s3://projects/<project-id>/
   files/...        # → <project-id>_codebase dataset
   findings/...     # → <project-id>_findings dataset
   docs/...         # → <project-id>_docs dataset

@@ -92,7 +92,7 @@ The CLI surface mirrors these helpers as natural-language prompts (`You> run fuz
 
 ## Knowledge & Ingestion
 
-- The `fuzzforge ingest` and `fuzzforge rag ingest` commands call into `ai/src/fuzzforge_ai/ingest_utils.py`, which filters file types, ignores caches, and streams files to the Cognee service where they are stored under `s3://<bucket>/<prefix>/project_<id>/`. When files land directly in `s3://cognee/projects/<project-id>/<category>/...`, the dispatcher performs the same workflow automatically via RabbitMQ events.
+- The `fuzzforge ingest` and `fuzzforge rag ingest` commands call into `ai/src/fuzzforge_ai/ingest_utils.py`, which filters file types, ignores caches, and streams files to the Cognee service where they are stored under `s3://projects/<project-id>/`. When files land directly in `s3://projects/<project-id>/<category>/...`, the dispatcher performs the same workflow automatically via RabbitMQ events.
 - Runtime queries hit `query_project_knowledge_api` on the executor, which defers to `cognee_service` for dataset lookup and semantic search. When Cognee credentials are absent the tools return a friendly "not configured" response.
 
 ## Artifact Pipeline

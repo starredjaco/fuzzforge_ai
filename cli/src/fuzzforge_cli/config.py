@@ -138,7 +138,7 @@ class CogneeConfig(BaseModel):
     service_password: Optional[str] = None
     storage_backend: Literal["local", "s3"] = "s3"
     s3_bucket: Optional[str] = None
-    s3_prefix: Optional[str] = "projects"
+    s3_prefix: Optional[str] = None
     s3_endpoint_url: Optional[str] = None
     s3_region: Optional[str] = None
     s3_access_key: Optional[str] = None
@@ -217,8 +217,12 @@ class FuzzForgeConfig(BaseModel):
             cognee.service_url = "http://localhost:18000"
             changed = True
 
-        if not cognee.s3_prefix:
-            cognee.s3_prefix = "projects"
+        if not cognee.s3_bucket:
+            cognee.s3_bucket = "projects"
+            changed = True
+
+        if cognee.s3_prefix is None:
+            cognee.s3_prefix = ""
             changed = True
 
         default_email = f"project_{self.project.id}@fuzzforge.dev"
@@ -234,9 +238,13 @@ class FuzzForgeConfig(BaseModel):
             changed = True
 
         if cognee.storage_backend.lower() == "s3":
-            bucket = cognee.s3_bucket or "cognee"
-            prefix = (cognee.s3_prefix or "projects").strip("/")
-            base_uri = f"s3://{bucket}/{prefix}/{self.project.id}"
+            bucket = cognee.s3_bucket or "projects"
+            prefix = (cognee.s3_prefix or "").strip("/")
+            path_parts = [f"s3://{bucket}"]
+            if prefix:
+                path_parts.append(prefix)
+            path_parts.append(self.project.id)
+            base_uri = "/".join(path_parts)
             data_dir = f"{base_uri}/files"
             system_dir = f"{base_uri}/graph"
         else:

@@ -243,7 +243,7 @@ This spins up the Cognee API on `http://localhost:18000`, publishes it to the ho
 
 ### RabbitMQ + Dispatcher
 
-`docker-compose.yml` also launches RabbitMQ (`http://localhost:15672`, ingest/ingest) and the `ingestion-dispatcher` container. MinIO publishes `PUT` events from `s3://cognee/projects/<project-id>/...` to the `cognee-ingest` exchange, and the dispatcher downloads the object and calls Cognee’s REST API. That means any rsync/upload into the projects bucket automatically becomes a dataset.
+`docker-compose.yml` also launches RabbitMQ (`http://localhost:15672`, ingest/ingest) and the `ingestion-dispatcher` container. MinIO publishes `PUT` events from `s3://projects/<project-id>/...` to the `cognee-ingest` exchange, and the dispatcher downloads the object and calls Cognee’s REST API. That means any rsync/upload into the projects bucket automatically becomes a dataset.
 
 ---
 

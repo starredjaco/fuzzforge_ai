@@ -102,7 +102,7 @@ Add comments or project-specific overrides as needed; the agent reads these vari
 
 ## Event-Driven Ingestion
 
-Uploading files directly into MinIO triggers Cognee automatically. The dispatcher watches `s3://cognee/projects/<project-id>/...` and translates the top-level folder into a dataset:
+Uploading files directly into MinIO triggers Cognee automatically. The dispatcher watches `s3://projects/<project-id>/...` and translates the top-level folder into a dataset:
 
 | Prefix     | Dataset name                          |
 |-----------|---------------------------------------|

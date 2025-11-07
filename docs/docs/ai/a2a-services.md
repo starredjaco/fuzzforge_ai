@@ -12,7 +12,7 @@ Run the command from a project directory that already contains `.fuzzforge/`. Th
 
 **Default directories / services**
 - Logs: `.fuzzforge/logs/cognee.log`
-- Cognee datasets: hosted by the shared Cognee service (`COGNEE_SERVICE_URL`) inside the configured MinIO/S3 bucket. Local mode falls back to `.fuzzforge/cognee/project_<id>/{data,system}`. Uploads dropped into `s3://cognee/projects/<project-id>/...` are ingested automatically via RabbitMQ + the dispatcher.
+- Cognee datasets: hosted by the shared Cognee service (`COGNEE_SERVICE_URL`) inside the configured MinIO/S3 bucket. Local mode falls back to `.fuzzforge/cognee/project_<id>/{data,system}`. Uploads dropped into `s3://projects/<project-id>/...` are ingested automatically via RabbitMQ + the dispatcher.
 - Artifact cache: `.fuzzforge/artifacts`
 
 ## HTTP Endpoints
