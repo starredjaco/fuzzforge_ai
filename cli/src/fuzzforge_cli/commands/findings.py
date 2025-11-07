@@ -1110,9 +1110,9 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             llm_model = ""
             llm_prompt_preview = ""
 
-        location_str = file_path
-        if line_start:
-            location_str += f":{line_start}"
+        location_str = file_path if file_path else "-"
+        if line_start and file_path:
+            location_str = f"{file_path}:{line_start}"
 
         severity_badge = {
             "critical": '<span class="badge badge-critical">CRITICAL</span>',
@@ -1187,6 +1187,9 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Findings Report - {run_id}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Google Fonts: Inter & Fira Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1277,9 +1280,39 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             padding-bottom: 50px;
             position: relative;
             overflow-x: hidden;
+            scroll-behavior: smooth;
         }}
 
-        /* Background Gradients - FuzzForge Ambient Glow */
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {{
+            width: 10px;
+        }}
+
+        ::-webkit-scrollbar-track {{
+            background: var(--bg-base);
+        }}
+
+        ::-webkit-scrollbar-thumb {{
+            background: linear-gradient(180deg, var(--brand-indigo), var(--brand-violet));
+            border-radius: 5px;
+        }}
+
+        ::-webkit-scrollbar-thumb:hover {{
+            background: linear-gradient(180deg, var(--brand-violet), var(--brand-pink));
+        }}
+
+        /* Animated Background Gradients - FuzzForge Ambient Glow */
+        @keyframes float {{
+            0%, 100% {{ transform: translate(0, 0) scale(1); }}
+            33% {{ transform: translate(30px, -30px) scale(1.1); }}
+            66% {{ transform: translate(-20px, 20px) scale(0.9); }}
+        }}
+
+        @keyframes pulse {{
+            0%, 100% {{ opacity: 0.15; }}
+            50% {{ opacity: 0.25; }}
+        }}
+
         body::before {{
             content: '';
             position: fixed;
@@ -1290,6 +1323,7 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
+            animation: float 20s ease-in-out infinite, pulse 8s ease-in-out infinite;
         }}
 
         body::after {{
@@ -1302,6 +1336,22 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
+            animation: float 25s ease-in-out infinite reverse, pulse 10s ease-in-out infinite;
+        }}
+
+        /* Additional floating gradient orb */
+        .container::before {{
+            content: '';
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            animation: float 30s ease-in-out infinite;
+            transform: translate(-50%, -50%);
         }}
 
         /* Typography */
@@ -1344,39 +1394,78 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         }}
 
         /* Header Section */
+        @keyframes shimmer {{
+            0% {{ background-position: -1000px 0; }}
+            100% {{ background-position: 1000px 0; }}
+        }}
+
+        @keyframes headerFloat {{
+            0%, 100% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(-10px); }}
+        }}
+
         .header-section {{
-            background: linear-gradient(135deg, var(--brand-indigo) 0%, var(--brand-violet) 100%);
-            padding: 3rem 0;
-            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--brand-indigo) 0%, var(--brand-violet) 50%, var(--brand-pink) 100%);
+            background-size: 200% 200%;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
             position: relative;
             z-index: 1;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+        }}
+
+        .header-section::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            animation: shimmer 3s infinite;
         }}
 
         .header-content {{
             max-width: 1280px;
             margin: 0 auto;
             padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
         }}
 
         .header-title {{
-            background: linear-gradient(to right, #e0e7ff, #ddd6fe, #fce7f3);
+            background: linear-gradient(to right, #e0e7ff, #ddd6fe, #fce7f3, #e0e7ff);
+            background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             font-size: 3rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            animation: shimmer 8s linear infinite;
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+            letter-spacing: -0.02em;
         }}
 
         .header-subtitle {{
             font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.95);
             margin-bottom: 0.25rem;
+            font-weight: 500;
+            animation: headerFloat 3s ease-in-out infinite;
         }}
 
         .header-meta {{
             font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            letter-spacing: 0.02em;
         }}
 
         /* Container */
@@ -1408,15 +1497,56 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         }}
 
         /* Card Styles - Glass Morphism */
+        @keyframes borderGlow {{
+            0%, 100% {{ box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0); }}
+            50% {{ box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.3); }}
+        }}
+
+        @keyframes slideUp {{
+            from {{
+                opacity: 0;
+                transform: translateY(30px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
         .card {{
             background: var(--bg-card);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-default);
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 2rem;
             margin-bottom: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out backwards;
+        }}
+
+        .card::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--brand-indigo), var(--brand-violet), var(--brand-pink));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }}
+
+        .card:hover::before {{
+            opacity: 1;
+        }}
+
+        .card:hover {{
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 30px rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
         }}
 
         .card-elevated {{
@@ -1426,15 +1556,49 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         }}
 
         /* Stat Cards */
+        @keyframes gradientBorder {{
+            0% {{ background-position: 0% 50%; }}
+            50% {{ background-position: 100% 50%; }}
+            100% {{ background-position: 0% 50%; }}
+        }}
+
+        @keyframes countUp {{
+            from {{ transform: scale(0.8); opacity: 0; }}
+            to {{ transform: scale(1); opacity: 1; }}
+        }}
+
         .stat-card {{
             text-align: center;
-            transition: transform 0.2s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: default;
+            position: relative;
+            border: 2px solid transparent;
+            background: var(--bg-card), linear-gradient(135deg, var(--brand-indigo), var(--brand-violet), var(--brand-pink));
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+        }}
+
+        .stat-card::after {{
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 0.75rem;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--brand-indigo), var(--brand-violet), var(--brand-pink));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }}
+
+        .stat-card:hover::after {{
+            opacity: 1;
         }}
 
         .stat-card:hover {{
-            transform: translateY(-5px);
-            background: var(--bg-card-hover);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3), 0 0 40px rgba(99, 102, 241, 0.2);
         }}
 
         .stat-number {{
@@ -1442,6 +1606,8 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             font-weight: 700;
             line-height: 1;
             margin-bottom: 0.5rem;
+            animation: countUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }}
 
         .stat-label {{
@@ -1449,11 +1615,23 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             color: var(--text-tertiary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            font-weight: 600;
         }}
 
-        .stat-critical {{ color: var(--critical-text); }}
-        .stat-medium {{ color: var(--medium-text); }}
-        .stat-low {{ color: var(--low-text); }}
+        .stat-critical {{
+            color: var(--critical-text);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }}
+
+        .stat-medium {{
+            color: var(--medium-text);
+            text-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+        }}
+
+        .stat-low {{
+            color: var(--low-text);
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }}
 
         /* Chart Container */
         .chart-container {{
@@ -1463,18 +1641,55 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         }}
 
         /* Section Title */
+        @keyframes underlineExpand {{
+            from {{ width: 0; }}
+            to {{ width: 60px; }}
+        }}
+
         .section-title {{
             font-size: 1.875rem;
             margin-bottom: 1.5rem;
+            margin-top: 2rem;
             color: var(--text-primary);
+            position: relative;
+            display: inline-block;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }}
+
+        .section-title::after {{
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            height: 3px;
+            width: 60px;
+            background: linear-gradient(90deg, var(--brand-indigo), var(--brand-violet));
+            border-radius: 2px;
+            animation: underlineExpand 0.6s ease-out;
         }}
 
         /* Filters */
+        @keyframes filterSlideIn {{
+            from {{
+                opacity: 0;
+                transform: translateX(-20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+        }}
+
         .filters {{
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
             margin-bottom: 1.5rem;
+            animation: filterSlideIn 0.5s ease-out;
         }}
 
         .filter-input {{
@@ -1486,30 +1701,78 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             padding: 0.625rem 1rem;
             color: var(--text-primary);
             font-size: 0.875rem;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
         }}
 
         .filter-input:focus {{
             outline: none;
             border-color: var(--brand-indigo);
             background: rgba(31, 37, 60, 0.8);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 20px rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }}
+
+        .search-with-icon {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border-radius: 0.65rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(6, 8, 22, 0.75);
+        }}
+
+        .search-with-icon input {{
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }}
+
+        .search-with-icon input:focus {{
+            outline: none;
+        }}
+
+        .search-with-icon .search-icon {{
+            width: 1.1rem;
+            height: 1.1rem;
+            color: var(--brand-indigo);
+            opacity: 0.8;
         }}
 
         .filter-select {{
             background: rgba(31, 37, 60, 0.6);
             border: 1px solid var(--border-default);
             border-radius: 0.5rem;
-            padding: 0.625rem 1rem;
+            padding: 0.625rem 1.25rem;
             color: var(--text-primary);
             font-size: 0.875rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             min-width: 150px;
+            backdrop-filter: blur(8px);
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--text-tertiary) 50%),
+                              linear-gradient(135deg, var(--text-tertiary) 50%, transparent 50%);
+            background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 2.5rem;
+        }}
+
+        .filter-select:hover {{
+            border-color: var(--brand-indigo);
+            transform: translateY(-2px);
         }}
 
         .filter-select:focus {{
             outline: none;
             border-color: var(--brand-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }}
 
         .btn {{
@@ -1521,69 +1784,258 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
             font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }}
+
+        .btn::before {{
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }}
+
+        .btn:hover::before {{
+            width: 300px;
+            height: 300px;
         }}
 
         .btn:hover {{
             background: rgba(99, 102, 241, 0.25);
             border-color: var(--brand-violet);
             color: var(--brand-violet);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }}
+
+        .btn:active {{
+            transform: translateY(0);
         }}
 
         /* Table Styles */
-        .table-container {{
+        @keyframes fadeInRow {{
+            from {{
+                opacity: 0;
+                transform: translateX(-10px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+        }}
+
+        @keyframes sortArrow {{
+            0%, 100% {{ transform: translateY(0); }}
+            50% {{ transform: translateY(-3px); }}
+        }}
+
+        .table-card {{
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }}
+
+        .table-card .filters {{
+            background: linear-gradient(135deg, rgba(15, 18, 35, 0.95) 0%, rgba(25, 18, 62, 0.85) 40%, rgba(43, 13, 62, 0.75) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 1rem;
+            padding: 1rem 1.25rem;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 20px 35px rgba(3, 7, 18, 0.55);
+            position: relative;
+            overflow: hidden;
+        }}
+
+        .table-card .filters::before {{
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+        }}
+
+        .table-card .filters .filter-select,
+        .table-card .filters .filter-input {{
+            background: rgba(6, 8, 22, 0.75);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--text-primary);
+            border-radius: 0.65rem;
+        }}
+
+        .table-card .filters .btn {{
+            background: linear-gradient(90deg, var(--brand-indigo), var(--brand-violet));
+            color: #fff;
+            border: 1px solid transparent;
+            border-radius: 0.65rem;
+            min-width: 110px;
+        }}
+
+        /* Bootstrap Table Dark Theme Overrides */
+        .table-responsive {{
+            border-radius: 1.1rem;
             overflow-x: auto;
-            border-radius: 0.5rem;
+            overflow-y: hidden;
+            border: 1px solid var(--border-default);
+            background: rgba(17, 24, 39, 0.85);
+            box-shadow: 0 25px 45px rgba(10, 14, 25, 0.55);
+            margin-top: 1rem;
         }}
 
-        table {{
+        .table {{
             width: 100%;
+            color: var(--text-secondary) !important;
+            border-color: var(--border-subtle) !important;
+            margin-bottom: 0;
+            table-layout: auto;
             border-collapse: collapse;
+            background: rgba(15, 18, 35, 0.95);
+            --bs-table-bg: transparent !important;
+            --bs-table-striped-bg: transparent !important;
+            --bs-table-hover-bg: transparent !important;
         }}
 
-        thead th {{
-            background: rgba(31, 37, 60, 0.8);
-            padding: 1rem;
-            text-align: left;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
+        .table thead {{
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            box-shadow: inset 0 -1px 0 var(--border-default);
+        }}
+
+        .table thead th {{
+            background: linear-gradient(180deg, rgba(31, 37, 60, 0.98) 0%, rgba(17, 20, 39, 0.95) 100%) !important;
+            color: var(--text-tertiary) !important;
+            text-transform: none;
+            font-size: 0.9rem;
             letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border-default);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-default) !important;
+            border-top: none !important;
+            padding: 0.95rem 1.1rem !important;
             cursor: pointer;
-            transition: color 0.2s ease;
         }}
 
-        thead th:hover {{
-            color: var(--brand-indigo);
+        .table thead th:hover {{
+            color: var(--brand-indigo) !important;
         }}
 
-        tbody tr.finding-row {{
-            border-bottom: 1px solid var(--border-subtle);
+        .table tbody tr.finding-row {{
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.2s ease, transform 0.2s ease;
+            border-bottom: 1px solid var(--border-subtle) !important;
+            background: rgba(17, 20, 39, 0.7);
         }}
 
-        tbody tr.finding-row:hover {{
-            background: rgba(99, 102, 241, 0.05);
+        .table tbody tr.finding-row:nth-of-type(4n+3) {{
+            background: rgba(31, 37, 60, 0.65);
         }}
 
-        tbody td {{
-            padding: 1rem;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
+        .table tbody tr.finding-row:hover {{
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.08) 100%);
+            transform: translateX(4px);
+        }}
+
+        .table thead th,
+        .table tbody td {{
+            text-align: left;
+        }}
+
+        .table thead th:nth-child(2),
+        .table tbody td:nth-child(2) {{
+            text-align: center;
+            white-space: nowrap;
+        }}
+
+        .table tbody td {{
+            color: var(--text-secondary) !important;
+            border-bottom: 1px solid var(--border-subtle) !important;
+            border-top: none !important;
+            padding: 0.95rem 1.1rem !important;
+            vertical-align: middle;
+            background: transparent !important;
+        }}
+
+        .table tbody td:nth-child(1) {{
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: var(--text-tertiary) !important;
+            font-weight: 500;
+            white-space: nowrap;
+        }}
+
+        .table tbody td:nth-child(3) {{
+            font-weight: 500;
+            color: var(--text-primary) !important;
+            white-space: normal;
+            word-break: break-word;
+        }}
+
+        .table tbody td:nth-child(4),
+        .table tbody td:nth-child(5) {{
+            font-size: 0.82rem;
+            white-space: nowrap;
+            color: var(--text-tertiary) !important;
+        }}
+
+        .table tbody td:nth-child(5) {{
+            font-family: 'Fira Code', monospace;
+        }}
+
+        /* Enhanced row state when expanded */
+        tbody tr.finding-row.expanded {{
+            background: rgba(99, 102, 241, 0.18) !important;
+            border-bottom-color: var(--brand-indigo) !important;
         }}
 
         /* Severity Badges */
+        @keyframes badgePulse {{
+            0%, 100% {{
+                box-shadow: 0 0 0 0 currentColor;
+            }}
+            50% {{
+                box-shadow: 0 0 0 4px transparent;
+            }}
+        }}
+
+        @keyframes badgeGlow {{
+            0%, 100% {{ filter: brightness(1); }}
+            50% {{ filter: brightness(1.2); }}
+        }}
+
         .badge {{
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.625rem;
-            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+        }}
+
+        .badge::before {{
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, currentColor, transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.3;
         }}
 
         .badge-critical {{
@@ -1623,17 +2075,44 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         }}
 
         /* Finding Details */
+        @keyframes detailsExpand {{
+            from {{
+                opacity: 0;
+                max-height: 0;
+                transform: scaleY(0.8);
+            }}
+            to {{
+                opacity: 1;
+                max-height: 2000px;
+                transform: scaleY(1);
+            }}
+        }}
+
         .finding-details {{
-            background: rgba(17, 20, 39, 0.5);
+            background: linear-gradient(180deg, rgba(17, 20, 39, 0.5) 0%, rgba(17, 20, 39, 0.85) 100%);
             border-top: 1px solid var(--border-subtle);
+            animation: detailsExpand 0.4s ease-out;
+            overflow: hidden;
         }}
 
         .details-card {{
-            background: rgba(31, 37, 60, 0.6);
+            background: rgba(31, 37, 60, 0.85);
             border: 1px solid var(--border-default);
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin: 1rem;
+            border-radius: 0.75rem;
+            padding: 1.75rem 2rem;
+            margin: 1.25rem 1.5rem;
+            position: relative;
+            backdrop-filter: blur(12px);
+        }}
+
+        .details-card::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--brand-indigo), var(--brand-violet), transparent);
         }}
 
         .details-grid {{
@@ -1645,18 +2124,33 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
 
         /* Code Blocks */
         pre {{
-            background: rgba(17, 20, 39, 0.8);
+            background: linear-gradient(135deg, rgba(17, 20, 39, 0.9) 0%, rgba(17, 20, 39, 0.95) 100%);
             border: 1px solid var(--border-default);
-            border-radius: 0.5rem;
-            padding: 1rem;
+            border-radius: 0.75rem;
+            border-left: 3px solid var(--brand-indigo);
+            padding: 1.25rem;
             overflow-x: auto;
             margin: 1rem 0;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }}
+
+        pre::before {{{{
+            content: '{{{{ }}}}';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--brand-indigo);
+            opacity: 0.5;
+        }}}}
 
         code {{
             color: var(--text-secondary);
             font-size: 0.875rem;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-family: 'Fira Code', 'Courier New', monospace;
         }}
 
         /* Syntax Highlighting */
@@ -1678,11 +2172,87 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
         .mt-3 {{ margin-top: 1.5rem; }}
         .text-center {{ text-align: center; }}
 
+        /* Staggered Animation Delays */
+        .col:nth-child(1) .card {{ animation-delay: 0.1s; }}
+        .col:nth-child(2) .card {{ animation-delay: 0.2s; }}
+        .col:nth-child(3) .card {{ animation-delay: 0.3s; }}
+        .col:nth-child(4) .card {{ animation-delay: 0.4s; }}
+
+        tbody tr.finding-row:nth-child(2) {{ animation-delay: 0.05s; }}
+        tbody tr.finding-row:nth-child(4) {{ animation-delay: 0.1s; }}
+        tbody tr.finding-row:nth-child(6) {{ animation-delay: 0.15s; }}
+        tbody tr.finding-row:nth-child(8) {{ animation-delay: 0.2s; }}
+        tbody tr.finding-row:nth-child(10) {{ animation-delay: 0.25s; }}
+
+        /* Scroll Progress Indicator */
+        @keyframes progressGrow {{
+            from {{ transform: scaleX(0); }}
+            to {{ transform: scaleX(1); }}
+        }}
+
+        body::after {{
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, var(--brand-indigo), var(--brand-violet), var(--brand-pink));
+            transform-origin: left;
+            z-index: 9999;
+            pointer-events: none;
+        }}
+
+        /* Enhanced Hover States */
+        h5 {{
+            transition: color 0.3s ease;
+        }}
+
+        .card:hover h5 {{
+            color: var(--brand-indigo);
+        }}
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {{
+            .header-title {{ font-size: 2rem; }}
+            .stat-number {{ font-size: 2.5rem; }}
+            .section-title {{ font-size: 1.5rem; }}
+            .filters {{ flex-direction: column; }}
+            .filter-input, .filter-select, .btn {{ width: 100%; }}
+        }}
+
+        /* Selection Styles */
+        ::selection {{
+            background: var(--brand-indigo);
+            color: white;
+        }}
+
+        ::-moz-selection {{
+            background: var(--brand-indigo);
+            color: white;
+        }}
+
+        /* Focus Visible for Accessibility */
+        *:focus-visible {{
+            outline: 2px solid var(--brand-indigo);
+            outline-offset: 2px;
+            border-radius: 0.25rem;
+        }}
+
         /* Print Styles */
         @media print {{
-            body::before, body::after {{ display: none; }}
+            body::before, body::after, .container::before {{ display: none; }}
             .filters, .no-print {{ display: none !important; }}
-            .card {{ box-shadow: none; border: 1px solid #ddd; }}
+            .card {{
+                box-shadow: none;
+                border: 1px solid #ddd;
+                animation: none;
+                break-inside: avoid;
+            }}
+            .header-section {{ box-shadow: none; }}
+            thead {{ display: table-header-group; }}
+            tbody tr {{ break-inside: avoid; }}
+            .stat-card:hover, .badge:hover, .btn:hover {{ transform: none; }}
         }}
     </style>
 </head>
@@ -1771,7 +2341,7 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
 
         <!-- Filters & Findings Table -->
         <h2 class="section-title mt-3">Detailed Findings</h2>
-        <div class="card">
+        <div class="card table-card">
             <!-- Filters -->
             <div class="filters no-print">
                 <select class="filter-select" id="severityFilter" onchange="applyFilters()">
@@ -1789,20 +2359,26 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                     <option value="fuzzer">🎯 Fuzzer</option>
                     <option value="manual">👤 Manual</option>
                 </select>
-                <input type="text" class="filter-input" id="searchInput" placeholder="Search findings..." onkeyup="applyFilters()">
+                <div class="filter-input search-with-icon">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search findings..." onkeyup="applyFilters()">
+                </div>
                 <button class="btn" onclick="resetFilters()">Reset</button>
             </div>
 
             <!-- Table -->
-            <div class="table-container">
-                <table>
+            <div class="table-responsive">
+                <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">ID</th>
-                            <th onclick="sortTable(1)">Severity</th>
-                            <th onclick="sortTable(2)">Finding</th>
-                            <th onclick="sortTable(3)">Source</th>
-                            <th onclick="sortTable(4)">Location</th>
+                            <th onclick="sortTable(0)" style="cursor: pointer;">ID</th>
+                            <th onclick="sortTable(1)" style="cursor: pointer;">Severity</th>
+                            <th onclick="sortTable(2)" style="cursor: pointer;">Finding</th>
+                            <th onclick="sortTable(3)" style="cursor: pointer;">Source</th>
+                            <th onclick="sortTable(4)" style="cursor: pointer;">Location</th>
                         </tr>
                     </thead>
                     <tbody id="findingsTable">
@@ -1819,13 +2395,13 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
     </div>
 
     <script>
-        // Chart.js setup with FuzzForge colors
+        // Chart.js setup with FuzzForge colors (matching stat cards)
         const chartColors = {{
-            critical: '#fca5a5',
-            high: '#fdba74',
-            medium: '#fde047',
-            low: '#93c5fd',
-            info: '#d1d5db'
+            critical: '#fca5a5',  // Red/pink - matches stat-critical
+            high: '#fca5a5',      // Red/pink - same as critical (they're grouped together)
+            medium: '#fde047',    // Yellow - matches stat-medium
+            low: '#93c5fd',       // Blue - matches stat-low
+            info: '#93c5fd'       // Blue - same as low (they're grouped together)
         }};
 
         // Chart.js defaults for dark theme
@@ -1839,7 +2415,7 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                 labels: {list(severity_data.keys())},
                 datasets: [{{
                     data: {list(severity_data.values())},
-                    backgroundColor: {[f"chartColors['{k}']" for k in severity_data.keys()]},
+                    backgroundColor: [{', '.join([f"chartColors['{k}']" for k in severity_data.keys()])}],
                     borderWidth: 2,
                     borderColor: '#111427'
                 }}]
@@ -1851,10 +2427,43 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                     legend: {{
                         position: 'bottom',
                         labels: {{
-                            color: '#d1d5db',
-                            padding: 15,
-                            font: {{ family: 'Inter', size: 12 }}
+                            color: '#e5e7eb',
+                            padding: 20,
+                            font: {{
+                                family: 'Inter',
+                                size: 13,
+                                weight: '600'
+                            }},
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 12,
+                            boxHeight: 12,
+                            textAlign: 'left',
+                            generateLabels: function(chart) {{
+                                const data = chart.data;
+                                return data.labels.map((label, i) => ({{
+                                    text: label.toUpperCase(),
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    strokeStyle: data.datasets[0].backgroundColor[i],
+                                    lineWidth: 0,
+                                    hidden: false,
+                                    index: i,
+                                    fontColor: '#e5e7eb'
+                                }}));
+                            }}
                         }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: 'rgba(31, 37, 60, 0.95)',
+                        titleColor: '#e5e7eb',
+                        bodyColor: '#d1d5db',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        boxPadding: 6,
+                        titleFont: {{ family: 'Inter', size: 13, weight: 'bold' }},
+                        bodyFont: {{ family: 'Inter', size: 12 }}
                     }}
                 }}
             }}
@@ -1879,10 +2488,49 @@ def export_to_html(findings_data: Dict[str, Any], output_path: Path, run_id: str
                     legend: {{
                         position: 'bottom',
                         labels: {{
-                            color: '#d1d5db',
-                            padding: 15,
-                            font: {{ family: 'Inter', size: 12 }}
+                            color: '#e5e7eb',
+                            padding: 20,
+                            font: {{
+                                family: 'Inter',
+                                size: 13,
+                                weight: '600'
+                            }},
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 12,
+                            boxHeight: 12,
+                            textAlign: 'left',
+                            generateLabels: function(chart) {{
+                                const data = chart.data;
+                                const typeIcons = {{
+                                    'llm': '🤖',
+                                    'tool': '🔧',
+                                    'fuzzer': '🎯',
+                                    'manual': '👤'
+                                }};
+                                return data.labels.map((label, i) => ({{
+                                    text: (typeIcons[label] || '') + ' ' + label.toUpperCase(),
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    strokeStyle: data.datasets[0].backgroundColor[i],
+                                    lineWidth: 0,
+                                    hidden: false,
+                                    index: i,
+                                    fontColor: '#e5e7eb'
+                                }}));
+                            }}
                         }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: 'rgba(31, 37, 60, 0.95)',
+                        titleColor: '#e5e7eb',
+                        bodyColor: '#d1d5db',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        boxPadding: 6,
+                        titleFont: {{ family: 'Inter', size: 13, weight: 'bold' }},
+                        bodyFont: {{ family: 'Inter', size: 12 }}
                     }}
                 }}
             }}
