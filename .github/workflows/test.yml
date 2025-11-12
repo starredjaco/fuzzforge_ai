@@ -110,13 +110,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff mypy
+          pip install ruff mypy bandit
 
       - name: Run ruff
         run: ruff check backend/src backend/toolbox backend/tests backend/benchmarks --output-format=github
 
       - name: Run mypy (continue on error)
         run: mypy backend/src backend/toolbox || true
+        continue-on-error: true
+
+      - name: Run bandit (continue on error)
+        run: bandit --recursive backend/src || true
         continue-on-error: true
 
   unit-tests:
