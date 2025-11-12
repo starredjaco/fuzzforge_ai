@@ -368,11 +368,11 @@ def parse_fuzzing_stats(stdout: str, stderr: str, engine: str) -> Dict[str, Any]
                 # Example: #8192 NEW    cov: 1234 ft: 5678 corp: 89/10KB
                 parts = line.split()
                 for i, part in enumerate(parts):
-                    if part.startswith("cov:"):
+                    if part.startswith("cov:") and i+1 < len(parts):
                         stats["coverage"] = int(parts[i+1])
-                    elif part.startswith("corp:"):
+                    elif part.startswith("corp:") and i+1 < len(parts):
                         stats["corpus_entries"] = int(parts[i+1].split('/')[0])
-                    elif part.startswith("exec/s:"):
+                    elif part.startswith("exec/s:") and i+1 < len(parts):
                         stats["executions_per_sec"] = float(parts[i+1])
                     elif part.startswith("#"):
                         stats["total_executions"] = int(part[1:])

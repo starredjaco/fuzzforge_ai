@@ -393,10 +393,6 @@ class FuzzForgeClient:
             # Prepare multipart form data
             url = urljoin(self.base_url, f"/workflows/{workflow_name}/upload-and-submit")
 
-            files = {
-                "file": (filename, open(upload_file, "rb"), "application/gzip")
-            }
-
             data = {}
 
             if parameters:
@@ -418,13 +414,15 @@ class FuzzForgeClient:
                 # This is a placeholder - real implementation would need custom approach
                 pass
 
-            response = self._client.post(url, files=files, data=data)
+            # Use context manager to ensure file handle is closed
+            with open(upload_file, "rb") as f:
+                files = {
+                    "file": (filename, f, "application/gzip")
+                }
+                response = self._client.post(url, files=files, data=data)
 
-            # Close file handle
-            files["file"][1].close()
-
-            data = self._handle_response(response)
-            return RunSubmissionResponse(**data)
+            response_data = self._handle_response(response)
+            return RunSubmissionResponse(**response_data)
 
         finally:
             # Cleanup temporary tarball
@@ -480,10 +478,6 @@ class FuzzForgeClient:
             # Prepare multipart form data
             url = urljoin(self.base_url, f"/workflows/{workflow_name}/upload-and-submit")
 
-            files = {
-                "file": (filename, open(upload_file, "rb"), "application/gzip")
-            }
-
             data = {}
 
             if parameters:
@@ -494,10 +488,12 @@ class FuzzForgeClient:
 
             logger.info(f"Uploading {filename} to {workflow_name}...")
 
-            response = await self._async_client.post(url, files=files, data=data)
-
-            # Close file handle
-            files["file"][1].close()
+            # Use context manager to ensure file handle is closed
+            with open(upload_file, "rb") as f:
+                files = {
+                    "file": (filename, f, "application/gzip")
+                }
+                response = await self._async_client.post(url, files=files, data=data)
 
             response_data = await self._ahandle_response(response)
             return RunSubmissionResponse(**response_data)

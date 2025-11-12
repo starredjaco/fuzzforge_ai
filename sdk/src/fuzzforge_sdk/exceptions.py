@@ -415,16 +415,20 @@ def from_http_error(status_code: int, response_text: str, url: str) -> FuzzForge
         if "/workflows/" in url and "/submit" not in url:
             # Extract workflow name from URL
             parts = url.split("/workflows/")
-            if len(parts) > 1:
-                workflow_name = parts[1].split("/")[0]
-                return WorkflowNotFoundError(workflow_name, context=context)
+            if len(parts) > 1 and parts[1]:
+                workflow_segments = parts[1].split("/")
+                if workflow_segments and workflow_segments[0]:
+                    workflow_name = workflow_segments[0]
+                    return WorkflowNotFoundError(workflow_name, context=context)
 
         elif "/runs/" in url:
             # Extract run ID from URL
             parts = url.split("/runs/")
-            if len(parts) > 1:
-                run_id = parts[1].split("/")[0]
-                return RunNotFoundError(run_id, context)
+            if len(parts) > 1 and parts[1]:
+                run_segments = parts[1].split("/")
+                if run_segments and run_segments[0]:
+                    run_id = run_segments[0]
+                    return RunNotFoundError(run_id, context)
 
     elif status_code == 400:
         # Check for specific error patterns in response

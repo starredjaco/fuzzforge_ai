@@ -267,7 +267,8 @@ class AndroidStaticAnalysisWorkflow:
         )
 
         # Calculate summary
-        total_findings = len(sarif_report.get("runs", [{}])[0].get("results", []))
+        runs = sarif_report.get("runs", [])
+        total_findings = len(runs[0].get("results", [])) if runs else 0
 
         summary = {
             "workflow": "android_static_analysis",
