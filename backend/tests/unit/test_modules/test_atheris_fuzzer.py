@@ -159,11 +159,20 @@ class TestAtherisFuzzerFindingGeneration:
 
     async def test_create_crash_finding(self, atheris_fuzzer):
         """Test crash finding creation"""
+        from models.finding_schema import FoundBy
+
         finding = atheris_fuzzer.create_finding(
+            rule_id="atheris-crash",
             title="Crash: Exception in TestOneInput",
             description="IndexError: list index out of range",
             severity="high",
             category="crash",
+            found_by=FoundBy(
+                module="atheris_fuzzer",
+                tool_name="Atheris",
+                tool_version="2.3.0",
+                type="fuzzer"
+            ),
             file_path="fuzz_target.py",
             metadata={
                 "crash_type": "IndexError",

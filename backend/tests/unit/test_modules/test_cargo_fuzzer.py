@@ -161,11 +161,20 @@ class TestCargoFuzzerFindingGeneration:
 
     async def test_create_finding_from_crash(self, cargo_fuzzer):
         """Test finding creation"""
+        from models.finding_schema import FoundBy
+
         finding = cargo_fuzzer.create_finding(
+            rule_id="cargo-fuzz-crash",
             title="Crash: Segmentation Fault",
             description="Test crash",
             severity="critical",
             category="crash",
+            found_by=FoundBy(
+                module="cargo_fuzz",
+                tool_name="cargo-fuzz",
+                tool_version="0.11.2",
+                type="fuzzer"
+            ),
             file_path="fuzz/fuzz_targets/fuzz_target_1.rs",
             metadata={"crash_type": "SIGSEGV"}
         )
