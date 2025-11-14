@@ -159,7 +159,7 @@ class TestAtherisFuzzerFindingGeneration:
 
     async def test_create_crash_finding(self, atheris_fuzzer):
         """Test crash finding creation"""
-        from models.finding_schema import FoundBy
+        from modules.base import FoundBy
 
         finding = atheris_fuzzer.create_finding(
             rule_id="atheris-crash",

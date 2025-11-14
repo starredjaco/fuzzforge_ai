@@ -161,7 +161,7 @@ class TestCargoFuzzerFindingGeneration:
 
     async def test_create_finding_from_crash(self, cargo_fuzzer):
         """Test finding creation"""
-        from models.finding_schema import FoundBy
+        from modules.base import FoundBy
 
         finding = cargo_fuzzer.create_finding(
             rule_id="cargo-fuzz-crash",
