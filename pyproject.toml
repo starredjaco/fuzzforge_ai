@@ -17,6 +17,7 @@ dev = [
     "fuzzforge-common",
     "fuzzforge-types",
     "fuzzforge-mcp",
+    "fuzzforge-cli",
 ]
 
 [tool.uv.workspace]

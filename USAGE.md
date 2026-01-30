@@ -33,9 +33,18 @@ This guide covers everything you need to know to get started with FuzzForge OSS 
 # 1. Clone and install
 git clone https://github.com/FuzzingLabs/fuzzforge-oss.git
 cd fuzzforge-oss
-uv sync
+uv sync --all-extras
 
-# 2. Build the module images (one-time setup)
+# 2. Build the SDK and module images (one-time setup)
+# First, build the SDK base image and wheel
+cd fuzzforge-modules/fuzzforge-modules-sdk
+uv build
+mkdir -p .wheels
+cp ../../dist/fuzzforge_modules_sdk-*.whl .wheels/
+cd ../..
+docker build -t localhost/fuzzforge-modules-sdk:0.1.0 fuzzforge-modules/fuzzforge-modules-sdk/
+
+# Then build all modules
 make build-modules
 
 # 3. Install MCP for your AI agent
@@ -102,10 +111,15 @@ cd fuzzforge-oss
 ### 2. Install Dependencies
 
 ```bash
-uv sync
+# Install all workspace dependencies including the CLI
+uv sync --all-extras
 ```
 
-This installs all FuzzForge components in a virtual environment.
+This installs all FuzzForge components in a virtual environment, including:
+- `fuzzforge-cli` - Command-line interface
+- `fuzzforge-mcp` - MCP server
+- `fuzzforge-runner` - Module execution engine
+- All supporting libraries
 
 ### 3. Verify Installation
 
@@ -117,9 +131,29 @@ uv run fuzzforge --help
 
 ## Building Modules
 
-FuzzForge modules are containerized security tools. After cloning, you need to build them once:
+FuzzForge modules are containerized security tools. After cloning, you need to build them once.
+
+> **Important:** The modules depend on a base SDK image that must be built first.
+
+### Build the SDK Base Image (Required First)
+
+```bash
+# 1. Build the SDK Python package wheel
+cd fuzzforge-modules/fuzzforge-modules-sdk
+uv build
+
+# 2. Copy wheel to the .wheels directory
+mkdir -p .wheels
+cp ../../dist/fuzzforge_modules_sdk-*.whl .wheels/
+
+# 3. Build the SDK Docker image
+cd ../..
+docker build -t localhost/fuzzforge-modules-sdk:0.1.0 fuzzforge-modules/fuzzforge-modules-sdk/
+```
 
 ### Build All Modules
+
+Once the SDK is built, build all modules:
 
 ```bash
 # From the fuzzforge-oss directory
@@ -132,12 +166,14 @@ This builds all available modules:
 - `fuzzforge-harness-validator` - Validates generated fuzzing harnesses
 - `fuzzforge-crash-analyzer` - Analyzes crash inputs
 
+> **Note:** The first build will take several minutes as it downloads Rust toolchains and dependencies.
+
 ### Build a Single Module
 
 ```bash
-# Build a specific module
+# Build a specific module (after SDK is built)
 cd fuzzforge-modules/rust-analyzer
-make build
+docker build -t fuzzforge-rust-analyzer:0.1.0 .
 ```
 
 ### Verify Modules are Built
@@ -147,12 +183,26 @@ make build
 docker images | grep fuzzforge
 ```
 
-You should see something like:
+You should see at least 5 images:
 ```
-fuzzforge-rust-analyzer    0.1.0    abc123def456    2 minutes ago    850 MB
-fuzzforge-cargo-fuzzer     0.1.0    789ghi012jkl    2 minutes ago    1.2 GB
-...
+localhost/fuzzforge-modules-sdk   0.1.0    abc123def456    5 minutes ago    465 MB
+fuzzforge-rust-analyzer           0.1.0    def789ghi012    2 minutes ago    2.0 GB
+fuzzforge-cargo-fuzzer            0.1.0    ghi012jkl345    2 minutes ago    1.9 GB
+fuzzforge-harness-validator       0.1.0    jkl345mno678    2 minutes ago    1.9 GB
+fuzzforge-crash-analyzer          0.1.0    mno678pqr901    2 minutes ago    517 MB
 ```
+
+### Verify CLI Installation
+
+```bash
+# Test the CLI
+uv run fuzzforge --help
+
+# List modules (with environment variable for modules path)
+FUZZFORGE_MODULES_PATH=/path/to/fuzzforge-modules uv run fuzzforge modules list
+```
+
+You should see 4 available modules listed.
 
 ---
 
@@ -244,6 +294,21 @@ uv run fuzzforge mcp uninstall copilot
 uv run fuzzforge mcp uninstall claude-desktop
 uv run fuzzforge mcp uninstall claude-code
 ```
+
+### Test MCP Server
+
+After installation, verify the MCP server is working:
+
+```bash
+# Check if MCP server process is running (in VS Code)
+ps aux | grep fuzzforge_mcp
+```
+
+You can also test the MCP integration directly in your AI agent:
+- **GitHub Copilot**: Ask "List available FuzzForge modules"
+- **Claude**: Ask "What FuzzForge modules are available?"
+
+The AI should respond with a list of 4 modules (rust-analyzer, cargo-fuzzer, harness-validator, crash-analyzer).
 
 ---
 
@@ -392,6 +457,39 @@ sudo usermod -aG docker $USER
 docker run --rm hello-world
 ```
 
+### Module Build Fails: "fuzzforge-modules-sdk not found"
+
+```
+ERROR: failed to solve: localhost/fuzzforge-modules-sdk:0.1.0: not found
+```
+
+**Solution:** You need to build the SDK base image first:
+```bash
+# 1. Build SDK wheel
+cd fuzzforge-modules/fuzzforge-modules-sdk
+uv build
+mkdir -p .wheels
+cp ../../dist/fuzzforge_modules_sdk-*.whl .wheels/
+
+# 2. Build SDK Docker image
+cd ../..
+docker build -t localhost/fuzzforge-modules-sdk:0.1.0 fuzzforge-modules/fuzzforge-modules-sdk/
+
+# 3. Now build modules
+make build-modules
+```
+
+### fuzzforge Command Not Found
+
+```
+error: Failed to spawn: `fuzzforge`
+```
+
+**Solution:** Install with `--all-extras` to include the CLI:
+```bash
+uv sync --all-extras
+```
+
 ### No Modules Found
 
 ```
@@ -399,9 +497,13 @@ No modules found.
 ```
 
 **Solution:**
-1. Build the modules first: `make build-modules`
-2. Check the modules path: `uv run fuzzforge modules list`
-3. Verify images exist: `docker images | grep fuzzforge`
+1. Build the SDK first (see above)
+2. Build the modules: `make build-modules`
+3. Check the modules path with environment variable:
+   ```bash
+   FUZZFORGE_MODULES_PATH=/path/to/fuzzforge-modules uv run fuzzforge modules list
+   ```
+4. Verify images exist: `docker images | grep fuzzforge`
 
 ### MCP Server Not Starting
 
@@ -411,6 +513,15 @@ uv run fuzzforge mcp status
 ```
 
 Verify the configuration file path exists and contains valid JSON.
+
+If the server process isn't running:
+```bash
+# Check if MCP server is running
+ps aux | grep fuzzforge_mcp
+
+# Test the MCP server manually
+uv run python -m fuzzforge_mcp
+```
 
 ### Module Container Fails to Build
 
