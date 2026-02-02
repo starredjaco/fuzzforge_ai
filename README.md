@@ -72,8 +72,8 @@ Instead of manually running security tools, describe what you want and let your 
 
 If you find FuzzForge useful, please **star the repo** to support development! 🚀
 
-<a href="https://github.com/FuzzingLabs/fuzzforge-oss/stargazers">
-  <img src="https://img.shields.io/github/stars/FuzzingLabs/fuzzforge-oss?style=social" alt="GitHub Stars">
+<a href="https://github.com/FuzzingLabs/fuzzforge_ai/stargazers">
+  <img src="https://img.shields.io/github/stars/FuzzingLabs/fuzzforge_ai?style=social" alt="GitHub Stars">
 </a>
 
 ---
@@ -135,8 +135,8 @@ If you find FuzzForge useful, please **star the repo** to support development! �
 
 ```bash
 # Clone the repository
-git clone https://github.com/FuzzingLabs/fuzzforge-oss.git
-cd fuzzforge-oss
+git clone https://github.com/FuzzingLabs/fuzzforge_ai.git
+cd fuzzforge_ai
 
 # Install dependencies
 uv sync
@@ -246,7 +246,7 @@ class MySecurityModule(FuzzForgeModule):
 ## 📁 Project Structure
 
 ```
-fuzzforge-oss/
+fuzzforge_ai/
 ├── fuzzforge-cli/           # Command-line interface
 ├── fuzzforge-common/        # Shared abstractions (containers, storage)
 ├── fuzzforge-mcp/           # MCP server for AI agents
