@@ -34,7 +34,7 @@ category = "analyzer"
 language = "rust"
 pipeline_stage = "analysis"
 pipeline_order = 1
-dependencies = []
+suggested_predecessors = []
 continuous_mode = false
 typical_duration = "30s"
 
@@ -44,7 +44,7 @@ use_cases = [
     "Produces fuzzable_functions.json for AI harness generation"
 ]
 
-input_requirements = [
+common_inputs = [
     "rust-source-code",
     "Cargo.toml"
 ]
@@ -53,3 +53,5 @@ output_artifacts = [
     "fuzzable_functions.json",
     "analysis_report.md"
 ]
+
+output_treatment = "Display analysis_report.md as rendered markdown. Show fuzzable_functions.json as a table listing function names, signatures, and fuzz-worthiness scores."

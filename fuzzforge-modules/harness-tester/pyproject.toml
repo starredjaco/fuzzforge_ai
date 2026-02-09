@@ -34,7 +34,7 @@ category = "validator"
 language = "rust"
 pipeline_stage = "harness-testing"
 pipeline_order = 2
-dependencies = ["fuzzforge-rust-analyzer"]
+suggested_predecessors = ["fuzzforge-rust-analyzer"]
 continuous_mode = false
 typical_duration = "2m"
 
@@ -45,7 +45,7 @@ use_cases = [
     "Gate before running expensive long fuzzing campaigns"
 ]
 
-input_requirements = [
+common_inputs = [
     "fuzz-harnesses",
     "Cargo.toml",
     "rust-source-code"
@@ -56,3 +56,5 @@ output_artifacts = [
     "coverage-report.json",
     "feedback-summary.md"
 ]
+
+output_treatment = "Display feedback-summary.md as rendered markdown for quick review. Show harness-evaluation.json summary with pass/fail status and error messages. Show coverage-report.json as a table of covered functions."

@@ -37,7 +37,7 @@ category = "fuzzer"
 language = "rust"
 pipeline_stage = "fuzzing"
 pipeline_order = 3
-dependencies = ["fuzzforge-harness-tester"]
+suggested_predecessors = ["fuzzforge-harness-tester"]
 continuous_mode = true
 typical_duration = "continuous"
 
@@ -48,7 +48,7 @@ use_cases = [
     "Long-running fuzzing campaign"
 ]
 
-input_requirements = [
+common_inputs = [
     "validated-harnesses",
     "Cargo.toml",
     "rust-source-code"
@@ -60,3 +60,5 @@ output_artifacts = [
     "corpus/",
     "fuzzing-stats.json"
 ]
+
+output_treatment = "Show fuzzing-stats.json as a live summary with total_executions, exec/sec, coverage_percent, and crashes_found. List files in crashes/ directory if any crashes found. The corpus/ and coverage-data/ directories are artifacts for downstream modules, don't display their contents."

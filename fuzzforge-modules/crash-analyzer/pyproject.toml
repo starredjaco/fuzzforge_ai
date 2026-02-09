@@ -38,7 +38,7 @@ category = "reporter"
 language = "rust"
 pipeline_stage = "crash-analysis"
 pipeline_order = 4
-dependencies = ["fuzzforge-cargo-fuzzer"]
+suggested_predecessors = ["fuzzforge-cargo-fuzzer"]
 continuous_mode = false
 typical_duration = "1m"
 
@@ -49,7 +49,7 @@ use_cases = [
     "Generate security vulnerability reports"
 ]
 
-input_requirements = [
+common_inputs = [
     "crash-artifacts",
     "stack-traces",
     "rust-source-code"
@@ -60,3 +60,5 @@ output_artifacts = [
     "crash-report.md",
     "severity-analysis.json"
 ]
+
+output_treatment = "Display crash-report.md as rendered markdown - this is the primary output. Show unique-crashes.json as a table with crash ID, severity, and affected function. Summarize severity-analysis.json showing counts by severity level (critical, high, medium, low)."
