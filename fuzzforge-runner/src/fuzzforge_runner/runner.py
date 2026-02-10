@@ -53,35 +53,23 @@ class ModuleInfo:
     #: Whether module image exists locally.
     available: bool = True
 
-    #: Module category (analyzer, validator, fuzzer, reporter).
-    category: str | None = None
-
-    #: Target programming language (e.g., "rust", "python").
-    language: str | None = None
-
-    #: Pipeline stage name (e.g., "analysis", "fuzzing").
-    pipeline_stage: str | None = None
-
-    #: Numeric order in pipeline for sorting.
-    pipeline_order: int | None = None
-
-    #: Module identifiers that must run before this one.
-    dependencies: list[str] | None = None
+    #: Module identifiers that should run before this one.
+    suggested_predecessors: list[str] | None = None
 
     #: Whether module supports continuous/background execution.
     continuous_mode: bool = False
 
-    #: Expected runtime (e.g., "30s", "5m", "continuous").
-    typical_duration: str | None = None
-
     #: Typical use cases and scenarios for this module.
     use_cases: list[str] | None = None
 
-    #: Input requirements (e.g., ["rust-source-code", "Cargo.toml"]).
-    input_requirements: list[str] | None = None
+    #: Common inputs (e.g., ["rust-source-code", "Cargo.toml"]).
+    common_inputs: list[str] | None = None
 
     #: Output artifacts produced (e.g., ["fuzzable_functions.json"]).
     output_artifacts: list[str] | None = None
+
+    #: How AI should display/treat outputs.
+    output_treatment: str | None = None
 
 
 class Runner:
@@ -274,16 +262,12 @@ class Runner:
                         description=project_info.get("description"),
                         version=project_info.get("version", image.tag),
                         available=True,
-                        category=fuzzforge_meta.get("category"),
-                        language=fuzzforge_meta.get("language"),
-                        pipeline_stage=fuzzforge_meta.get("pipeline_stage"),
-                        pipeline_order=fuzzforge_meta.get("pipeline_order"),
-                        dependencies=fuzzforge_meta.get("dependencies", []),
+                        suggested_predecessors=fuzzforge_meta.get("suggested_predecessors", []),
                         continuous_mode=fuzzforge_meta.get("continuous_mode", False),
-                        typical_duration=fuzzforge_meta.get("typical_duration"),
                         use_cases=fuzzforge_meta.get("use_cases", []),
-                        input_requirements=fuzzforge_meta.get("input_requirements", []),
+                        common_inputs=fuzzforge_meta.get("common_inputs", []),
                         output_artifacts=fuzzforge_meta.get("output_artifacts", []),
+                        output_treatment=fuzzforge_meta.get("output_treatment"),
                     )
                 )
 

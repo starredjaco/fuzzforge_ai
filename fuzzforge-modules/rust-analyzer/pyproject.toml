@@ -30,13 +30,8 @@ package = true
 # FuzzForge module metadata for AI agent discovery
 [tool.fuzzforge.module]
 identifier = "fuzzforge-rust-analyzer"
-category = "analyzer"
-language = "rust"
-pipeline_stage = "analysis"
-pipeline_order = 1
 suggested_predecessors = []
 continuous_mode = false
-typical_duration = "30s"
 
 use_cases = [
     "Analyze Rust crate to find fuzzable functions",

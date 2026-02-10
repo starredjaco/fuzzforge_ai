@@ -33,16 +33,11 @@ package = true
 # FuzzForge module metadata for AI agent discovery
 [tool.fuzzforge.module]
 identifier = "fuzzforge-cargo-fuzzer"
-category = "fuzzer"
-language = "rust"
-pipeline_stage = "fuzzing"
-pipeline_order = 3
 suggested_predecessors = ["fuzzforge-harness-tester"]
 continuous_mode = true
-typical_duration = "continuous"
 
 use_cases = [
-    "Run continuous coverage-guided fuzzing with libFuzzer",
+    "Run continuous coverage-guided fuzzing on Rust targets with libFuzzer",
     "Execute cargo-fuzz on validated harnesses",
     "Produce crash artifacts for analysis",
     "Long-running fuzzing campaign"

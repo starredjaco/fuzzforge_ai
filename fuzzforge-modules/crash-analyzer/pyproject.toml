@@ -34,16 +34,11 @@ package = true
 # FuzzForge module metadata for AI agent discovery
 [tool.fuzzforge.module]
 identifier = "fuzzforge-crash-analyzer"
-category = "reporter"
-language = "rust"
-pipeline_stage = "crash-analysis"
-pipeline_order = 4
 suggested_predecessors = ["fuzzforge-cargo-fuzzer"]
 continuous_mode = false
-typical_duration = "1m"
 
 use_cases = [
-    "Analyze crash artifacts from fuzzing",
+    "Analyze Rust crash artifacts from fuzzing",
     "Deduplicate crashes by stack trace signature",
     "Triage crashes by severity (critical, high, medium, low)",
     "Generate security vulnerability reports"

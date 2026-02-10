@@ -30,16 +30,11 @@ dev-dependencies = [
 # FuzzForge module metadata for AI agent discovery
 [tool.fuzzforge.module]
 identifier = "fuzzforge-harness-tester"
-category = "validator"
-language = "rust"
-pipeline_stage = "harness-testing"
-pipeline_order = 2
 suggested_predecessors = ["fuzzforge-rust-analyzer"]
 continuous_mode = false
-typical_duration = "2m"
 
 use_cases = [
-    "Validate fuzz harnesses compile correctly",
+    "Validate Rust fuzz harnesses compile correctly",
     "Run short fuzzing trials to assess harness quality",
     "Provide detailed feedback for AI to improve harnesses",
     "Gate before running expensive long fuzzing campaigns"
