@@ -185,6 +185,8 @@ def _generate_mcp_config(
             "FUZZFORGE_ENGINE__TYPE": engine_type,
             "FUZZFORGE_ENGINE__GRAPHROOT": str(graphroot),
             "FUZZFORGE_ENGINE__RUNROOT": str(runroot),
+            "FUZZFORGE_HUB__ENABLED": "true",
+            "FUZZFORGE_HUB__CONFIG_PATH": str(fuzzforge_root / "hub-config.json"),
         },
     }
 
@@ -454,6 +456,7 @@ def install(
     console.print(f"  Modules Path:  {resolved_modules}")
     console.print(f"  Engine:        {engine}")
     console.print(f"  Socket:        {socket}")
+    console.print(f"  Hub Config:    {fuzzforge_root / 'hub-config.json'}")
     console.print()
 
     console.print("[bold]Next steps:[/bold]")

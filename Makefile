@@ -1,4 +1,4 @@
-.PHONY: help install sync format lint typecheck test build-modules clean
+.PHONY: help install sync format lint typecheck test build-modules build-hub-images clean
 
 SHELL := /bin/bash
 
@@ -12,8 +12,9 @@ help:
 	@echo "  make lint          - Lint code with ruff"
 	@echo "  make typecheck     - Type check with mypy"
 	@echo "  make test          - Run all tests"
-	@echo "  make build-modules - Build all module container images"
-	@echo "  make clean         - Clean build artifacts"
+	@echo "  make build-modules     - Build all module container images"
+	@echo "  make build-hub-images  - Build all mcp-security-hub images"
+	@echo "  make clean             - Clean build artifacts"
 	@echo ""
 
 # Install all dependencies
@@ -92,6 +93,10 @@ build-modules:
 	done
 	@echo ""
 	@echo "✓ All modules built successfully!"
+
+# Build all mcp-security-hub images for the firmware analysis pipeline
+build-hub-images:
+	@bash scripts/build-hub-images.sh
 
 # Clean build artifacts
 clean:

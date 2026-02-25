@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import subprocess
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
@@ -242,7 +243,7 @@ class HubClient:
 
         # Add volumes
         for volume in config.volumes:
-            cmd.extend(["-v", volume])
+            cmd.extend(["-v", os.path.expanduser(volume)])
 
         # Add environment variables
         for key, value in config.environment.items():

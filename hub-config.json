@@ -1,0 +1,105 @@
+{
+  "servers": [
+    {
+      "name": "nmap-mcp",
+      "description": "Network reconnaissance using Nmap - port scanning, service detection, OS fingerprinting",
+      "type": "docker",
+      "image": "nmap-mcp:latest",
+      "category": "reconnaissance",
+      "capabilities": ["NET_RAW"],
+      "enabled": true
+    },
+    {
+      "name": "binwalk-mcp",
+      "description": "Firmware extraction and analysis using Binwalk - file signatures, entropy analysis, embedded file extraction",
+      "type": "docker",
+      "image": "binwalk-mcp:latest",
+      "category": "binary-analysis",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "yara-mcp",
+      "description": "Pattern matching and malware classification using YARA rules",
+      "type": "docker",
+      "image": "yara-mcp:latest",
+      "category": "binary-analysis",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "capa-mcp",
+      "description": "Static capability detection using capa - identifies malware capabilities in binaries",
+      "type": "docker",
+      "image": "capa-mcp:latest",
+      "category": "binary-analysis",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "radare2-mcp",
+      "description": "Binary analysis and reverse engineering using radare2",
+      "type": "docker",
+      "image": "radare2-mcp:latest",
+      "category": "binary-analysis",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "ghidra-mcp",
+      "description": "Advanced binary decompilation and reverse engineering using Ghidra",
+      "type": "docker",
+      "image": "ghcr.io/clearbluejar/pyghidra-mcp:latest",
+      "category": "binary-analysis",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "searchsploit-mcp",
+      "description": "CVE and exploit search using SearchSploit / Exploit-DB",
+      "type": "docker",
+      "image": "searchsploit-mcp:latest",
+      "category": "exploitation",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "nuclei-mcp",
+      "description": "Vulnerability scanning using Nuclei templates",
+      "type": "docker",
+      "image": "nuclei-mcp:latest",
+      "category": "web-security",
+      "capabilities": ["NET_RAW"],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "trivy-mcp",
+      "description": "Container and filesystem vulnerability scanning using Trivy",
+      "type": "docker",
+      "image": "trivy-mcp:latest",
+      "category": "cloud-security",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    },
+    {
+      "name": "gitleaks-mcp",
+      "description": "Secret and credential detection in code and firmware using Gitleaks",
+      "type": "docker",
+      "image": "gitleaks-mcp:latest",
+      "category": "secrets",
+      "capabilities": [],
+      "volumes": ["~/.fuzzforge/hub/workspace:/data"],
+      "enabled": true
+    }
+  ],
+  "default_timeout": 300,
+  "cache_tools": true
+}
