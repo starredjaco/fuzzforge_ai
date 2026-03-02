@@ -237,6 +237,7 @@ async def add_hub_server(
     description: str | None = None,
     capabilities: list[str] | None = None,
     environment: dict[str, str] | None = None,
+    volumes: list[str] | None = None,
 ) -> dict[str, Any]:
     """Add a new MCP server to the hub.
 
@@ -252,6 +253,7 @@ async def add_hub_server(
     :param description: Human-readable description.
     :param capabilities: Docker capabilities to add (e.g., ["NET_RAW"]).
     :param environment: Environment variables to pass.
+    :param volumes: Docker volume mounts (e.g., ["~/.fuzzforge/hub/workspace:/data"]).
     :return: Information about the added server.
 
     Examples:
@@ -290,6 +292,7 @@ async def add_hub_server(
             description=description,
             capabilities=capabilities or [],
             environment=environment or {},
+            volumes=volumes or [],
         )
 
         server = executor.add_server(config)

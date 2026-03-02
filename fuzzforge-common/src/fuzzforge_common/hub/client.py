@@ -243,7 +243,7 @@ class HubClient:
 
         # Add volumes
         for volume in config.volumes:
-            cmd.extend(["-v", os.path.expanduser(volume)])
+            cmd.extend(["-v", os.path.expandvars(os.path.expanduser(volume))])
 
         # Add environment variables
         for key, value in config.environment.items():
@@ -256,6 +256,7 @@ class HubClient:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            limit=4 * 1024 * 1024,  # 4 MB — default 64 KB breaks large YARA/capa results
         )
 
         try:
@@ -300,6 +301,7 @@ class HubClient:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=env,
+            limit=4 * 1024 * 1024,  # 4 MB — default 64 KB breaks large tool results
         )
 
         try:
