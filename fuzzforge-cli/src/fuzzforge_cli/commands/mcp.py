@@ -132,15 +132,22 @@ def _find_fuzzforge_root() -> Path:
     :returns: Path to fuzzforge-oss directory.
 
     """
-    # Try to find from current file location
-    current = Path(__file__).resolve()
+    # Check environment variable override first
+    env_root = os.environ.get("FUZZFORGE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
 
-    # Walk up to find fuzzforge-oss root
+    # Walk up from cwd to find a fuzzforge root (hub-config.json is the marker)
+    for parent in [Path.cwd(), *Path.cwd().parents]:
+        if (parent / "hub-config.json").is_file():
+            return parent
+
+    # Fall back to __file__-based search (dev install inside fuzzforge-oss)
+    current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "fuzzforge-mcp").is_dir():
             return parent
 
-    # Fall back to cwd
     return Path.cwd()
 
 
