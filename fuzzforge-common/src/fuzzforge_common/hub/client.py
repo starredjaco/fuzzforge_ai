@@ -176,6 +176,7 @@ class HubClient:
         arguments: dict[str, Any],
         *,
         timeout: int | None = None,
+        extra_volumes: list[str] | None = None,
     ) -> dict[str, Any]:
         """Execute a tool on a hub server.
 
@@ -183,6 +184,7 @@ class HubClient:
         :param tool_name: Name of the tool to execute.
         :param arguments: Tool arguments.
         :param timeout: Execution timeout (uses default if None).
+        :param extra_volumes: Additional Docker volume mounts to inject.
         :returns: Tool execution result.
         :raises HubClientError: If execution fails.
 
@@ -199,7 +201,7 @@ class HubClient:
         )
 
         try:
-            async with self._connect(config) as (reader, writer):
+            async with self._connect(config, extra_volumes=extra_volumes) as (reader, writer):
                 # Initialise MCP session (skip for persistent — already done)
                 if not self._persistent_sessions.get(config.name):
                     await self._initialize_session(reader, writer, config.name)
@@ -248,6 +250,7 @@ class HubClient:
     async def _connect(
         self,
         config: HubServerConfig,
+        extra_volumes: list[str] | None = None,
     ) -> AsyncGenerator[tuple[asyncio.StreamReader, asyncio.StreamWriter], None]:
         """Connect to an MCP server.
 
@@ -256,6 +259,7 @@ class HubClient:
         ephemeral per-call connection logic.
 
         :param config: Server configuration.
+        :param extra_volumes: Additional Docker volume mounts to inject.
         :yields: Tuple of (reader, writer) for communication.
 
         """
@@ -268,7 +272,7 @@ class HubClient:
 
         # Ephemeral connection (original behaviour)
         if config.type == HubServerType.DOCKER:
-            async with self._connect_docker(config) as streams:
+            async with self._connect_docker(config, extra_volumes=extra_volumes) as streams:
                 yield streams
         elif config.type == HubServerType.COMMAND:
             async with self._connect_command(config) as streams:
@@ -284,10 +288,12 @@ class HubClient:
     async def _connect_docker(
         self,
         config: HubServerConfig,
+        extra_volumes: list[str] | None = None,
     ) -> AsyncGenerator[tuple[asyncio.StreamReader, asyncio.StreamWriter], None]:
         """Connect to a Docker-based MCP server.
 
         :param config: Server configuration with image name.
+        :param extra_volumes: Additional volume mounts to inject (e.g. project assets).
         :yields: Tuple of (reader, writer) for stdio communication.
 
         """
@@ -302,8 +308,12 @@ class HubClient:
         for cap in config.capabilities:
             cmd.extend(["--cap-add", cap])
 
-        # Add volumes
+        # Add volumes from server config
         for volume in config.volumes:
+            cmd.extend(["-v", os.path.expanduser(volume)])
+
+        # Add extra volumes (e.g. project assets injected at runtime)
+        for volume in (extra_volumes or []):
             cmd.extend(["-v", os.path.expanduser(volume)])
 
         # Add environment variables

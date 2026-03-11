@@ -16,7 +16,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from fuzzforge_common.hub import HubExecutor, HubServerConfig, HubServerType
 
-from fuzzforge_mcp.dependencies import get_settings
+from fuzzforge_mcp.dependencies import get_project_path, get_settings, get_storage
 
 mcp: FastMCP = FastMCP()
 
@@ -180,10 +180,30 @@ async def execute_hub_tool(
     try:
         executor = _get_hub_executor()
 
+        # Inject project assets as Docker volume mounts if configured.
+        # Mounts the assets directory at the standard paths used by hub tools:
+        #   /app/uploads  — binwalk, and other tools that use UPLOAD_DIR
+        #   /app/samples  — yara, capa, and other tools that use SAMPLES_DIR
+        extra_volumes: list[str] = []
+        try:
+            storage = get_storage()
+            project_path = get_project_path()
+            assets_path = storage.get_project_assets_path(project_path)
+            if assets_path:
+                assets_str = str(assets_path)
+                extra_volumes = [
+                    f"{assets_str}:/app/uploads:ro",
+                    f"{assets_str}:/app/samples:ro",
+                ]
+        except Exception:
+            # Never block tool execution because of asset injection failure
+            extra_volumes = []
+
         result = await executor.execute_tool(
             identifier=identifier,
             arguments=arguments or {},
             timeout=timeout,
+            extra_volumes=extra_volumes or None,
         )
 
         return result.to_dict()

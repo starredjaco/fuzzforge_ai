@@ -180,12 +180,14 @@ class HubExecutor:
         arguments: dict[str, Any] | None = None,
         *,
         timeout: int | None = None,
+        extra_volumes: list[str] | None = None,
     ) -> HubExecutionResult:
         """Execute a hub tool.
 
         :param identifier: Tool identifier (hub:server:tool or server:tool).
         :param arguments: Tool arguments.
         :param timeout: Execution timeout.
+        :param extra_volumes: Additional Docker volume mounts to inject.
         :returns: Execution result.
 
         """
@@ -232,6 +234,7 @@ class HubExecutor:
                         tool_name_to_use or tool_name,
                         arguments,
                         timeout=timeout,
+                        extra_volumes=extra_volumes,
                     )
                     return HubExecutionResult(
                         success=True,
@@ -268,6 +271,7 @@ class HubExecutor:
                 tool.name,
                 arguments,
                 timeout=timeout,
+                extra_volumes=extra_volumes,
             )
             return HubExecutionResult(
                 success=True,
