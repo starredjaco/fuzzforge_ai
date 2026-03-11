@@ -345,13 +345,14 @@ class HubExecutor:
     # Persistent session management
     # ------------------------------------------------------------------
 
-    async def start_persistent_server(self, server_name: str) -> dict[str, Any]:
+    async def start_persistent_server(self, server_name: str, extra_volumes: list[str] | None = None) -> dict[str, Any]:
         """Start a persistent container session for a server.
 
         The container stays running between tool calls, allowing stateful
         interactions (e.g., radare2 sessions, long-running fuzzing).
 
         :param server_name: Name of the hub server to start.
+        :param extra_volumes: Additional host:container volume mounts to inject.
         :returns: Session status dictionary.
         :raises ValueError: If server not found.
 
@@ -362,7 +363,7 @@ class HubExecutor:
             msg = f"Server '{server_name}' not found"
             raise ValueError(msg)
 
-        session = await self._client.start_persistent_session(server.config)
+        session = await self._client.start_persistent_session(server.config, extra_volumes=extra_volumes)
 
         # Auto-discover tools on the new session
         try:

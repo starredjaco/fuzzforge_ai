@@ -172,9 +172,16 @@ async def execute_hub_tool(
     :return: Tool execution result.
 
     Example identifiers:
+    - "hub:binwalk-mcp:binwalk_scan"
+    - "hub:yara-mcp:yara_scan_with_rules"
     - "hub:nmap:nmap_scan"
-    - "nmap:nmap_scan"
-    - "hub:nuclei:nuclei_scan"
+
+    FILE ACCESS — if set_project_assets was called, the assets directory is
+    mounted read-only inside the container at two standard paths:
+    - /app/uploads/  (used by binwalk, and tools with UPLOAD_DIR)
+    - /app/samples/  (used by yara, capa, and tools with SAMPLES_DIR)
+    Always use /app/uploads/<filename> or /app/samples/<filename> when
+    passing file paths to hub tools — do NOT use the host path.
 
     """
     try:
@@ -353,7 +360,22 @@ async def start_hub_server(server_name: str) -> dict[str, Any]:
     try:
         executor = _get_hub_executor()
 
-        result = await executor.start_persistent_server(server_name)
+        # Inject project assets as Docker volume mounts (same logic as execute_hub_tool).
+        extra_volumes: list[str] = []
+        try:
+            storage = get_storage()
+            project_path = get_project_path()
+            assets_path = storage.get_project_assets_path(project_path)
+            if assets_path:
+                assets_str = str(assets_path)
+                extra_volumes = [
+                    f"{assets_str}:/app/uploads:ro",
+                    f"{assets_str}:/app/samples:ro",
+                ]
+        except Exception:  # noqa: BLE001 - never block server start due to asset injection failure
+            extra_volumes = []
+
+        result = await executor.start_persistent_server(server_name, extra_volumes=extra_volumes or None)
 
         return {
             "success": True,

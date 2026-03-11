@@ -539,6 +539,7 @@ class HubClient:
     async def start_persistent_session(
         self,
         config: HubServerConfig,
+        extra_volumes: list[str] | None = None,
     ) -> PersistentSession:
         """Start a persistent Docker container and initialise MCP session.
 
@@ -546,6 +547,7 @@ class HubClient:
         called, allowing multiple tool calls on the same session.
 
         :param config: Server configuration (must be Docker type).
+        :param extra_volumes: Additional host:container volume mounts to inject.
         :returns: The created persistent session.
         :raises HubClientError: If the container cannot be started.
 
@@ -589,6 +591,9 @@ class HubClient:
 
         for volume in config.volumes:
             cmd.extend(["-v", os.path.expanduser(volume)])
+
+        for extra_vol in (extra_volumes or []):
+            cmd.extend(["-v", extra_vol])
 
         for key, value in config.environment.items():
             cmd.extend(["-e", f"{key}={value}"])
