@@ -3,16 +3,16 @@
 from pathlib import Path
 from typing import Annotated
 
-from fuzzforge_runner import Runner, Settings
+from fuzzforge_mcp.storage import LocalStorage  # type: ignore[import-untyped]
 from typer import Context as TyperContext
 from typer import Option, Typer
 
-from fuzzforge_cli.commands import mcp, modules, projects
+from fuzzforge_cli.commands import mcp, projects
 from fuzzforge_cli.context import Context
 
 application: Typer = Typer(
     name="fuzzforge",
-    help="FuzzForge OSS - Security research orchestration platform.",
+    help="FuzzForge AI - Security research orchestration platform.",
 )
 
 
@@ -27,15 +27,6 @@ def main(
             help="Path to the FuzzForge project directory.",
         ),
     ] = Path.cwd(),
-    modules_path: Annotated[
-        Path,
-        Option(
-            "--modules",
-            "-m",
-            envvar="FUZZFORGE_MODULES_PATH",
-            help="Path to the modules directory.",
-        ),
-    ] = Path.home() / ".fuzzforge" / "modules",
     storage_path: Annotated[
         Path,
         Option(
@@ -43,54 +34,37 @@ def main(
             envvar="FUZZFORGE_STORAGE__PATH",
             help="Path to the storage directory.",
         ),
-    ] = Path.home() / ".fuzzforge" / "storage",
-    engine_type: Annotated[
-        str,
-        Option(
-            "--engine",
-            envvar="FUZZFORGE_ENGINE__TYPE",
-            help="Container engine type (docker or podman).",
-        ),
-    ] = "docker",
-    engine_socket: Annotated[
-        str,
-        Option(
-            "--socket",
-            envvar="FUZZFORGE_ENGINE__SOCKET",
-            help="Container engine socket path.",
-        ),
-    ] = "",
+    ] = Path.cwd() / ".fuzzforge" / "storage",
     context: TyperContext = None,  # type: ignore[assignment]
 ) -> None:
-    """FuzzForge OSS - Security research orchestration platform.
+    """FuzzForge AI - Security research orchestration platform.
 
-    Execute security research modules in isolated containers.
+    Discover and execute MCP hub tools for security research.
 
     """
-    from fuzzforge_runner.settings import EngineSettings, ProjectSettings, StorageSettings
-
-    settings = Settings(
-        engine=EngineSettings(
-            type=engine_type,  # type: ignore[arg-type]
-            socket=engine_socket,
-        ),
-        storage=StorageSettings(
-            path=storage_path,
-        ),
-        project=ProjectSettings(
-            default_path=project_path,
-            modules_path=modules_path,
-        ),
-    )
-
-    runner = Runner(settings)
+    storage = LocalStorage(base_path=storage_path)
 
     context.obj = Context(
-        runner=runner,
+        storage=storage,
         project_path=project_path,
     )
 
 
 application.add_typer(mcp.application)
-application.add_typer(modules.application)
 application.add_typer(projects.application)
+
+
+@application.command(
+    name="ui",
+    help="Launch the FuzzForge terminal interface.",
+)
+def launch_ui() -> None:
+    """Launch the interactive FuzzForge TUI dashboard.
+
+    Provides a visual dashboard showing AI agent connection status
+    and hub server availability, with wizards for setup and configuration.
+
+    """
+    from fuzzforge_cli.tui.app import FuzzForgeApp
+
+    FuzzForgeApp().run()

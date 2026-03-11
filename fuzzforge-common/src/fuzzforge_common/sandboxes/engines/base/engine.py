@@ -273,6 +273,23 @@ class AbstractFuzzForgeSandboxEngine(ABC):
         raise NotImplementedError(message)
 
     @abstractmethod
+    def tail_file_from_container(self, identifier: str, path: str, start_line: int = 1) -> str:
+        """Read a file from a running container starting at a given line number.
+
+        Uses ``tail -n +{start_line}`` to avoid re-reading the entire file on
+        every poll.  This is the preferred method for incremental reads of
+        append-only files such as ``stream.jsonl``.
+
+        :param identifier: Container identifier.
+        :param path: Path to file inside container.
+        :param start_line: 1-based line number to start reading from.
+        :returns: File contents from *start_line* onwards (may be empty).
+
+        """
+        message: str = f"method 'tail_file_from_container' is not implemented for class '{self.__class__.__name__}'"
+        raise NotImplementedError(message)
+
+    @abstractmethod
     def list_containers(self, all_containers: bool = True) -> list[dict]:
         """List containers.
 

@@ -12,7 +12,7 @@ import os
 import sys
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -44,10 +44,10 @@ def _get_copilot_mcp_path() -> Path:
     """
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "Code" / "User" / "mcp.json"
-    elif sys.platform == "win32":
+    if sys.platform == "win32":
         return Path(os.environ.get("APPDATA", "")) / "Code" / "User" / "mcp.json"
-    else:  # Linux
-        return Path.home() / ".config" / "Code" / "User" / "mcp.json"
+    # Linux
+    return Path.home() / ".config" / "Code" / "User" / "mcp.json"
 
 
 def _get_claude_desktop_mcp_path() -> Path:
@@ -58,10 +58,10 @@ def _get_claude_desktop_mcp_path() -> Path:
     """
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
-    elif sys.platform == "win32":
+    if sys.platform == "win32":
         return Path(os.environ.get("APPDATA", "")) / "Claude" / "claude_desktop_config.json"
-    else:  # Linux
-        return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
+    # Linux
+    return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
 
 def _get_claude_code_mcp_path(project_path: Path | None = None) -> Path:
@@ -114,13 +114,13 @@ def _detect_docker_socket() -> str:
     :returns: Path to the Docker socket.
 
     """
-    socket_paths = [
-        "/var/run/docker.sock",
+    socket_paths: list[Path] = [
+        Path("/var/run/docker.sock"),
         Path.home() / ".docker" / "run" / "docker.sock",
     ]
 
     for path in socket_paths:
-        if Path(path).exists():
+        if path.exists():
             return str(path)
 
     return "/var/run/docker.sock"
@@ -132,28 +132,33 @@ def _find_fuzzforge_root() -> Path:
     :returns: Path to fuzzforge-oss directory.
 
     """
-    # Try to find from current file location
-    current = Path(__file__).resolve()
+    # Check environment variable override first
+    env_root = os.environ.get("FUZZFORGE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
 
-    # Walk up to find fuzzforge-oss root
-    for parent in current.parents:
-        if (parent / "fuzzforge-mcp").is_dir() and (parent / "fuzzforge-runner").is_dir():
+    # Walk up from cwd to find a fuzzforge root (hub-config.json is the marker)
+    for parent in [Path.cwd(), *Path.cwd().parents]:
+        if (parent / "hub-config.json").is_file():
             return parent
 
-    # Fall back to cwd
+    # Fall back to __file__-based search (dev install inside fuzzforge-oss)
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "fuzzforge-mcp").is_dir():
+            return parent
+
     return Path.cwd()
 
 
 def _generate_mcp_config(
     fuzzforge_root: Path,
-    modules_path: Path,
     engine_type: str,
     engine_socket: str,
-) -> dict:
+) -> dict[str, Any]:
     """Generate MCP server configuration.
 
     :param fuzzforge_root: Path to fuzzforge-oss installation.
-    :param modules_path: Path to the modules directory.
     :param engine_type: Container engine type (podman or docker).
     :param engine_socket: Container engine socket path.
     :returns: MCP configuration dictionary.
@@ -169,9 +174,12 @@ def _generate_mcp_config(
         command = "uv"
         args = ["--directory", str(fuzzforge_root), "run", "fuzzforge-mcp"]
 
-    # Self-contained storage paths for FuzzForge containers
-    # This isolates FuzzForge from system Podman and avoids snap issues
-    fuzzforge_home = Path.home() / ".fuzzforge"
+    # User-global storage paths for FuzzForge containers.
+    # Kept under ~/.fuzzforge so images are built once and shared across
+    # all workspaces — regardless of where `fuzzforge mcp install` is run.
+    # Override with FUZZFORGE_USER_DIR for isolated testing.
+    user_dir_env = os.environ.get("FUZZFORGE_USER_DIR")
+    fuzzforge_home = Path(user_dir_env).resolve() if user_dir_env else Path.home() / ".fuzzforge"
     graphroot = fuzzforge_home / "containers" / "storage"
     runroot = fuzzforge_home / "containers" / "run"
 
@@ -181,10 +189,11 @@ def _generate_mcp_config(
         "args": args,
         "cwd": str(fuzzforge_root),
         "env": {
-            "FUZZFORGE_MODULES_PATH": str(modules_path),
             "FUZZFORGE_ENGINE__TYPE": engine_type,
             "FUZZFORGE_ENGINE__GRAPHROOT": str(graphroot),
             "FUZZFORGE_ENGINE__RUNROOT": str(runroot),
+            "FUZZFORGE_HUB__ENABLED": "true",
+            "FUZZFORGE_HUB__CONFIG_PATH": str(fuzzforge_root / "hub-config.json"),
         },
     }
 
@@ -264,14 +273,6 @@ def generate(
             help="AI agent to generate config for (copilot, claude-desktop, or claude-code).",
         ),
     ],
-    modules_path: Annotated[
-        Path | None,
-        Option(
-            "--modules",
-            "-m",
-            help="Path to the modules directory.",
-        ),
-    ] = None,
     engine: Annotated[
         str,
         Option(
@@ -285,15 +286,11 @@ def generate(
 
     :param context: Typer context.
     :param agent: Target AI agent.
-    :param modules_path: Override modules path.
     :param engine: Container engine type.
 
     """
     console = Console()
     fuzzforge_root = _find_fuzzforge_root()
-
-    # Use defaults if not specified
-    resolved_modules = modules_path or (fuzzforge_root / "fuzzforge-modules")
 
     # Detect socket
     if engine == "podman":
@@ -304,7 +301,6 @@ def generate(
     # Generate config
     server_config = _generate_mcp_config(
         fuzzforge_root=fuzzforge_root,
-        modules_path=resolved_modules,
         engine_type=engine,
         engine_socket=socket,
     )
@@ -348,14 +344,6 @@ def install(
             help="AI agent to install config for (copilot, claude-desktop, or claude-code).",
         ),
     ],
-    modules_path: Annotated[
-        Path | None,
-        Option(
-            "--modules",
-            "-m",
-            help="Path to the modules directory.",
-        ),
-    ] = None,
     engine: Annotated[
         str,
         Option(
@@ -380,7 +368,6 @@ def install(
 
     :param context: Typer context.
     :param agent: Target AI agent.
-    :param modules_path: Override modules path.
     :param engine: Container engine type.
     :param force: Overwrite existing configuration.
 
@@ -399,9 +386,6 @@ def install(
         config_path = _get_claude_desktop_mcp_path()
         servers_key = "mcpServers"
 
-    # Use defaults if not specified
-    resolved_modules = modules_path or (fuzzforge_root / "fuzzforge-modules")
-
     # Detect socket
     if engine == "podman":
         socket = _detect_podman_socket()
@@ -411,7 +395,6 @@ def install(
     # Generate server config
     server_config = _generate_mcp_config(
         fuzzforge_root=fuzzforge_root,
-        modules_path=resolved_modules,
         engine_type=engine,
         engine_socket=socket,
     )
@@ -451,9 +434,9 @@ def install(
     console.print(f"[bold]Configuration file:[/bold] {config_path}")
     console.print()
     console.print("[bold]Settings:[/bold]")
-    console.print(f"  Modules Path:  {resolved_modules}")
     console.print(f"  Engine:        {engine}")
     console.print(f"  Socket:        {socket}")
+    console.print(f"  Hub Config:    {fuzzforge_root / 'hub-config.json'}")
     console.print()
 
     console.print("[bold]Next steps:[/bold]")

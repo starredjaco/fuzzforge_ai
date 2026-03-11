@@ -168,6 +168,11 @@ class Docker(AbstractFuzzForgeSandboxEngine):
         message: str = "Docker engine read_file_from_container is not yet implemented"
         raise NotImplementedError(message)
 
+    def tail_file_from_container(self, identifier: str, path: str, start_line: int = 1) -> str:
+        """Read a file from a container starting at a given line number."""
+        message: str = "Docker engine tail_file_from_container is not yet implemented"
+        raise NotImplementedError(message)
+
     def list_containers(self, all_containers: bool = True) -> list[dict]:
         """List containers."""
         message: str = "Docker engine list_containers is not yet implemented"

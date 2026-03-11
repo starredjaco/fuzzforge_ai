@@ -1,6 +1,6 @@
-# FuzzForge OSS Roadmap
+# FuzzForge AI Roadmap
 
-This document outlines the planned features and development direction for FuzzForge OSS.
+This document outlines the planned features and development direction for FuzzForge AI.
 
 ---
 

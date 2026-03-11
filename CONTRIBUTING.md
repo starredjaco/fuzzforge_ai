@@ -1,6 +1,6 @@
-# Contributing to FuzzForge OSS
+# Contributing to FuzzForge AI
 
-Thank you for your interest in contributing to FuzzForge OSS! We welcome contributions from the community and are excited to collaborate with you.
+Thank you for your interest in contributing to FuzzForge AI! We welcome contributions from the community and are excited to collaborate with you.
 
 **Our Vision**: FuzzForge aims to be a **universal platform for security research** across all cybersecurity domains. Through our modular architecture, any security tool—from fuzzing engines to cloud scanners, from mobile app analyzers to IoT security tools—can be integrated as a containerized module and controlled via AI agents.
 
@@ -360,8 +360,8 @@ Beyond modules, you can contribute to FuzzForge's core components.
 
 1. **Clone and Install**
    ```bash
-   git clone https://github.com/FuzzingLabs/fuzzforge-oss.git
-   cd fuzzforge-oss
+   git clone https://github.com/FuzzingLabs/fuzzforge_ai.git
+   cd fuzzforge_ai
    uv sync --all-extras
    ```
 
@@ -538,7 +538,7 @@ Before submitting a new module:
 
 ## License
 
-By contributing to FuzzForge OSS, you agree that your contributions will be licensed under the same license as the project (see [LICENSE](LICENSE)).
+By contributing to FuzzForge AI, you agree that your contributions will be licensed under the same license as the project (see [LICENSE](LICENSE)).
 
 For module contributions:
 - Modules you create remain under the project license

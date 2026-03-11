@@ -475,6 +475,30 @@ class Podman(AbstractFuzzForgeSandboxEngine):
                 return ""
             return stdout.decode("utf-8", errors="replace") if stdout else ""
 
+    def tail_file_from_container(self, identifier: str, path: str, start_line: int = 1) -> str:
+        """Read a file from a container starting at a given line number.
+
+        :param identifier: Container identifier.
+        :param path: Path to file inside container.
+        :param start_line: 1-based line number to start reading from.
+        :returns: File contents from *start_line* onwards.
+
+        """
+        client: PodmanClient = self.get_client()
+        with client:
+            container: Container = client.containers.get(key=identifier)
+            (status, (stdout, stderr)) = container.exec_run(
+                cmd=["tail", "-n", f"+{start_line}", path],
+                demux=True,
+            )
+            if status != 0:
+                error_msg = stderr.decode("utf-8", errors="replace") if stderr else "File not found"
+                get_logger().debug(
+                    "failed to tail file from container", path=path, start_line=start_line, error=error_msg,
+                )
+                return ""
+            return stdout.decode("utf-8", errors="replace") if stdout else ""
+
     def list_containers(self, all_containers: bool = True) -> list[dict]:
         """List containers.
 

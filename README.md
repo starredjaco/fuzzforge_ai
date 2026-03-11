@@ -1,4 +1,4 @@
-<h1 align="center"> FuzzForge OSS</h1>
+<h1 align="center"> FuzzForge AI</h1>
 <h3 align="center">AI-Powered Security Research Orchestration via MCP</h3>
 
 <p align="center">
@@ -26,13 +26,13 @@
 
 ---
 
-> 🚧 **FuzzForge OSS is under active development.** Expect breaking changes and new features!
+> 🚧 **FuzzForge AI is under active development.** Expect breaking changes and new features!
 
 ---
 
 ## 🚀 Overview
 
-**FuzzForge OSS** is an open-source runtime that enables AI agents (GitHub Copilot, Claude, etc.) to orchestrate security research workflows through the **Model Context Protocol (MCP)**.
+**FuzzForge AI** is an open-source runtime that enables AI agents (GitHub Copilot, Claude, etc.) to orchestrate security research workflows through the **Model Context Protocol (MCP)**.
 
 ### The Core: Modules
 
@@ -43,7 +43,7 @@ At the heart of FuzzForge are **modules** - containerized security tools that AI
 - **🔗 Composable**: Chain modules together into automated workflows
 - **📦 Extensible**: Build custom modules with the Python SDK
 
-The OSS runtime handles module discovery, execution, and result collection. Security modules (developed separately) provide the actual security tooling - from static analyzers to fuzzers to crash triagers.
+FuzzForge AI handles module discovery, execution, and result collection. Security modules (developed separately) provide the actual security tooling - from static analyzers to fuzzers to crash triagers.
 
 Instead of manually running security tools, describe what you want and let your AI assistant handle it.
 
@@ -171,11 +171,11 @@ FuzzForge modules are containerized security tools that AI agents can orchestrat
 
 ### Module Ecosystem
 
-| | FuzzForge OSS | FuzzForge Enterprise Modules |
+| | FuzzForge AI | FuzzForge Enterprise Modules |
 |---|---|---|
 | **What** | Runtime & MCP server | Security research modules |
 | **License** | Apache 2.0 | BSL 1.1 (Business Source License) |
-| **Compatibility** | ✅ Runs any compatible module | ✅ Works with OSS runtime |
+| **Compatibility** | ✅ Runs any compatible module | ✅ Works with FuzzForge AI |
 
 **Enterprise modules** are developed separately and provide production-ready security tooling:
 
@@ -187,7 +187,7 @@ FuzzForge modules are containerized security tools that AI agents can orchestrat
 | 🔐 **Vulnerability Detection** | Pattern Matcher, Taint Analyzer | Security vulnerability scanning |
 | 📝 **Reporting** | Report Generator, SARIF Exporter | Automated security report generation |
 
-> 💡 **Build your own modules!** The FuzzForge SDK allows you to create custom modules that integrate seamlessly with the OSS runtime. See [Creating Custom Modules](#-creating-custom-modules).
+> 💡 **Build your own modules!** The FuzzForge SDK allows you to create custom modules that integrate seamlessly with FuzzForge AI. See [Creating Custom Modules](#-creating-custom-modules).
 
 ### Execution Modes
 

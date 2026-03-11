@@ -389,6 +389,24 @@ class DockerCLI(AbstractFuzzForgeSandboxEngine):
             return ""
         return result.stdout
 
+    def tail_file_from_container(self, identifier: str, path: str, start_line: int = 1) -> str:
+        """Read a file from a container starting at a given line number.
+
+        :param identifier: Container identifier.
+        :param path: Path to file in container.
+        :param start_line: 1-based line number to start reading from.
+        :returns: File contents from *start_line* onwards.
+
+        """
+        result = self._run(
+            ["exec", identifier, "tail", "-n", f"+{start_line}", path],
+            check=False,
+        )
+        if result.returncode != 0:
+            get_logger().debug("failed to tail file from container", path=path, start_line=start_line)
+            return ""
+        return result.stdout
+
     def list_containers(self, all_containers: bool = True) -> list[dict]:
         """List containers.
 

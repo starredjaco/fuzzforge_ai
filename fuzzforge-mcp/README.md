@@ -45,11 +45,11 @@ For custom setups, you can manually configure the MCP server.
 {
   "mcpServers": {
     "fuzzforge": {
-      "command": "/path/to/fuzzforge-oss/.venv/bin/python",
+      "command": "/path/to/fuzzforge_ai/.venv/bin/python",
       "args": ["-m", "fuzzforge_mcp"],
-      "cwd": "/path/to/fuzzforge-oss",
+      "cwd": "/path/to/fuzzforge_ai",
       "env": {
-        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge-oss/fuzzforge-modules",
+        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge_ai/fuzzforge-modules",
         "FUZZFORGE_ENGINE__TYPE": "docker"
       }
     }
@@ -64,11 +64,11 @@ For custom setups, you can manually configure the MCP server.
   "servers": {
     "fuzzforge": {
       "type": "stdio",
-      "command": "/path/to/fuzzforge-oss/.venv/bin/python",
+      "command": "/path/to/fuzzforge_ai/.venv/bin/python",
       "args": ["-m", "fuzzforge_mcp"],
-      "cwd": "/path/to/fuzzforge-oss",
+      "cwd": "/path/to/fuzzforge_ai",
       "env": {
-        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge-oss/fuzzforge-modules",
+        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge_ai/fuzzforge-modules",
         "FUZZFORGE_ENGINE__TYPE": "docker"
       }
     }
@@ -83,11 +83,11 @@ For custom setups, you can manually configure the MCP server.
   "mcpServers": {
     "fuzzforge": {
       "type": "stdio",
-      "command": "/path/to/fuzzforge-oss/.venv/bin/python",
+      "command": "/path/to/fuzzforge_ai/.venv/bin/python",
       "args": ["-m", "fuzzforge_mcp"],
-      "cwd": "/path/to/fuzzforge-oss",
+      "cwd": "/path/to/fuzzforge_ai",
       "env": {
-        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge-oss/fuzzforge-modules",
+        "FUZZFORGE_MODULES_PATH": "/path/to/fuzzforge_ai/fuzzforge-modules",
         "FUZZFORGE_ENGINE__TYPE": "docker"
       }
     }
