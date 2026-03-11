@@ -1,27 +1,23 @@
-"""Build-image modal screen for FuzzForge TUI.
+"""Build-image confirm dialog for FuzzForge TUI.
 
-Provides a modal dialog that runs ``docker/podman build`` for a single
-hub tool and streams the build log into a scrollable log area.
+Simple modal that asks the user to confirm before starting a background
+build.  The actual build is managed by the app so the user is never
+locked on this screen.
 
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Log
-
-from fuzzforge_cli.tui.helpers import build_image, find_dockerfile_for_server
+from textual.widgets import Button, Label
 
 
 class BuildImageScreen(ModalScreen[bool]):
-    """Modal that builds a Docker/Podman image and streams the build log."""
+    """Quick confirmation before starting a background Docker/Podman build."""
 
-    BINDINGS = [("escape", "cancel", "Close")]
+    BINDINGS = [("escape", "cancel", "Cancel")]
 
     def __init__(self, server_name: str, image: str, hub_name: str) -> None:
         super().__init__()
@@ -30,74 +26,32 @@ class BuildImageScreen(ModalScreen[bool]):
         self._hub_name = hub_name
 
     def compose(self) -> ComposeResult:
-        """Compose the build dialog layout."""
         with Vertical(id="build-dialog"):
             yield Label(f"Build  {self._image}", classes="dialog-title")
             yield Label(
                 f"Hub: {self._hub_name}  •  Tool: {self._server_name}",
                 id="build-subtitle",
             )
-            yield Log(id="build-log", auto_scroll=True)
-            yield Label("", id="build-status")
+            yield Label(
+                "The image will be built in the background.\n"
+                "You\'ll receive a notification when it\'s done.",
+                id="confirm-text",
+            )
             with Horizontal(classes="dialog-buttons"):
-                yield Button("Close", variant="default", id="btn-close", disabled=True)
+                yield Button("Build", variant="success", id="btn-build")
+                yield Button("Cancel", variant="default", id="btn-cancel")
 
     def on_mount(self) -> None:
-        """Start the build as soon as the screen is shown."""
-        self._start_build()
-
-    def action_cancel(self) -> None:
-        """Only dismiss when the build is not running (Close button enabled)."""
-        close_btn = self.query_one("#btn-close", Button)
-        if not close_btn.disabled:
-            self.dismiss(False)
+        # Ensure a widget is focused so both buttons respond to a single click.
+        # Default to Cancel so Build is never pre-selected.
+        self.query_one("#btn-cancel", Button).focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle Close button."""
-        if event.button.id == "btn-close":
-            self.dismiss(self._succeeded)
+        event.stop()
+        if event.button.id == "btn-build":
+            self.dismiss(True)
+        elif event.button.id == "btn-cancel":
+            self.dismiss(False)
 
-    @work(thread=True)
-    def _start_build(self) -> None:
-        """Run the build in a background thread and stream output."""
-        self._succeeded = False
-        log = self.query_one("#build-log", Log)
-        status = self.query_one("#build-status", Label)
-
-        dockerfile = find_dockerfile_for_server(self._server_name, self._hub_name)
-        if dockerfile is None:
-            log.write_line(f"ERROR: Dockerfile not found for '{self._server_name}' in hub '{self._hub_name}'")
-            status.update("[red]Build failed — Dockerfile not found[/red]")
-            self.query_one("#btn-close", Button).disabled = False
-            return
-
-        log.write_line(f"$ {self._get_engine()} build -t {self._image} {dockerfile.parent}")
-        log.write_line("")
-
-        try:
-            proc = build_image(self._image, dockerfile)
-        except FileNotFoundError as exc:
-            log.write_line(f"ERROR: {exc}")
-            status.update("[red]Build failed — engine not found[/red]")
-            self.query_one("#btn-close", Button).disabled = False
-            return
-
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            log.write_line(line.rstrip())
-
-        proc.wait()
-
-        if proc.returncode == 0:
-            self._succeeded = True
-            status.update(f"[green]✓ Built {self._image} successfully[/green]")
-        else:
-            status.update(f"[red]✗ Build failed (exit {proc.returncode})[/red]")
-
-        self.query_one("#btn-close", Button).disabled = False
-
-    @staticmethod
-    def _get_engine() -> str:
-        import os
-        engine = os.environ.get("FUZZFORGE_ENGINE__TYPE", "docker").lower()
-        return "podman" if engine == "podman" else "docker"
+    def action_cancel(self) -> None:
+        self.dismiss(False)

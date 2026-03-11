@@ -13,9 +13,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rich.text import Text
+from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.message import Message
 from textual.widgets import Button, DataTable, Footer, Header
 
 from fuzzforge_cli.tui.helpers import (
@@ -31,6 +33,36 @@ if TYPE_CHECKING:
 
 # Agent config entries stored alongside their linked status for row mapping
 _AgentRow = tuple[str, "AIAgent", Path, str, bool]
+
+
+class SingleClickDataTable(DataTable):
+    """DataTable subclass that also fires ``RowClicked`` on a single mouse click.
+
+    Textual's built-in ``RowSelected`` only fires on Enter or on a second click
+    of an already-highlighted row.  ``RowClicked`` fires on every first click,
+    enabling single-click-to-act UX without requiring Enter.
+    """
+
+    class RowClicked(Message):
+        """Fired on every single mouse click on a data row."""
+
+        def __init__(self, data_table: "SingleClickDataTable", cursor_row: int) -> None:
+            self.data_table = data_table
+            self.cursor_row = cursor_row
+            super().__init__()
+
+        @property
+        def control(self) -> "SingleClickDataTable":
+            return self.data_table
+
+    async def _on_click(self, event: events.Click) -> None:  # type: ignore[override]
+        """Forward to parent, then post RowClicked for single-click detection."""
+        await super()._on_click(event)
+        meta = event.style.meta
+        if "row" in meta and self.cursor_type == "row":
+            row_index: int = meta["row"]
+            if row_index >= 0:  # skip header row
+                self.post_message(SingleClickDataTable.RowClicked(self, row_index))
 
 
 class FuzzForgeApp(App[None]):
@@ -97,7 +129,7 @@ class FuzzForgeApp(App[None]):
     /* Modal screens */
     AgentSetupScreen, AgentUnlinkScreen,
     HubManagerScreen, LinkHubScreen, CloneHubScreen,
-    BuildImageScreen {
+    BuildImageScreen, BuildLogScreen {
         align: center middle;
     }
 
@@ -132,15 +164,20 @@ class FuzzForgeApp(App[None]):
     }
 
     #build-dialog {
-        width: 100;
-        height: 80%;
+        width: 72;
+        height: auto;
+        max-height: 80%;
         border: thick #4699fc;
         background: $surface;
         padding: 2 3;
     }
 
+    #confirm-text {
+        margin: 1 0 2 0;
+    }
+
     #build-log {
-        height: 1fr;
+        height: 30;
         border: round $panel;
         margin: 1 0;
     }
@@ -201,7 +238,7 @@ class FuzzForgeApp(App[None]):
         yield Header()
         with VerticalScroll(id="main"):
             with Vertical(id="hub-panel", classes="panel"):
-                yield DataTable(id="hub-table")
+                yield SingleClickDataTable(id="hub-table")
             with Horizontal(id="hub-title-bar"):
                 yield Button(
                     "Hub Manager (h)",
@@ -220,9 +257,12 @@ class FuzzForgeApp(App[None]):
     def on_mount(self) -> None:
         """Populate tables on startup."""
         self._agent_rows: list[_AgentRow] = []
-        # hub row data: (server_name, image, hub_name) | None for group headers
-        self._hub_rows: list[tuple[str, str, str] | None] = []
-        self.query_one("#hub-panel").border_title = "Hub Servers  [dim](Enter to build)[/dim]"
+        self._hub_rows: list[tuple[str, str, str, bool] | None] = []
+        # Background build tracking
+        self._active_builds: dict[str, object] = {}  # image -> Popen
+        self._build_logs: dict[str, list[str]] = {}   # image -> log lines
+        self._build_results: dict[str, bool] = {}     # image -> success
+        self.query_one("#hub-panel").border_title = "Hub Servers  [dim](click ✗ Not built to build)[/dim]"
         self.query_one("#agents-panel").border_title = "AI Agents"
         self._refresh_agents()
         self._refresh_hub()
@@ -249,9 +289,10 @@ class FuzzForgeApp(App[None]):
     def _refresh_hub(self) -> None:
         """Refresh the hub servers table, grouped by source hub."""
         self._hub_rows = []
-        table = self.query_one("#hub-table", DataTable)
+        table = self.query_one("#hub-table", SingleClickDataTable)
         table.clear(columns=True)
         table.add_columns("Server", "Image", "Hub", "Status")
+        table.cursor_type = "row"
 
         try:
             fuzzforge_root = find_fuzzforge_root()
@@ -312,7 +353,9 @@ class FuzzForgeApp(App[None]):
                 image = server.get("image", "unknown")
                 enabled = server.get("enabled", True)
 
-                if not enabled:
+                if image in getattr(self, "_active_builds", {}):
+                    status_cell = Text("⏳ Building…", style="yellow")
+                elif not enabled:
                     status_cell = Text("Disabled", style="dim")
                 elif is_ready:
                     status_cell = Text("✓ Ready", style="green")
@@ -325,13 +368,20 @@ class FuzzForgeApp(App[None]):
                     hub_name,
                     status_cell,
                 )
-                self._hub_rows.append((name, image, hub_name))
+                self._hub_rows.append((name, image, hub_name, is_ready))
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle row selection on agents and hub tables."""
+        """Handle Enter-key row selection on the agents table."""
         if event.data_table.id == "agents-table":
             self._handle_agent_row(event.cursor_row)
         elif event.data_table.id == "hub-table":
+            self._handle_hub_row(event.cursor_row)
+
+    def on_single_click_data_table_row_clicked(
+        self, event: SingleClickDataTable.RowClicked
+    ) -> None:
+        """Handle single mouse-click on a hub table row."""
+        if event.data_table.id == "hub-table":
             self._handle_hub_row(event.cursor_row)
 
     def _handle_agent_row(self, idx: int) -> None:
@@ -357,14 +407,25 @@ class FuzzForgeApp(App[None]):
             )
 
     def _handle_hub_row(self, idx: int) -> None:
-        """Open the build dialog for the selected hub tool row."""
+        """Handle a click on a hub table row."""
         if idx < 0 or idx >= len(self._hub_rows):
             return
         row_data = self._hub_rows[idx]
         if row_data is None:
             return  # group header row — ignore
 
-        server_name, image, hub_name = row_data
+        server_name, image, hub_name, is_ready = row_data
+
+        # If a build is already running, open the live log viewer
+        if image in self._active_builds:
+            from fuzzforge_cli.tui.screens.build_log import BuildLogScreen
+            self.push_screen(BuildLogScreen(image))
+            return
+
+        if is_ready:
+            self.notify(f"{image} is already built ✓", severity="information")
+            return
+
         if hub_name == "manual":
             self.notify("Manual servers must be built outside FuzzForge")
             return
@@ -373,14 +434,68 @@ class FuzzForgeApp(App[None]):
 
         self.push_screen(
             BuildImageScreen(server_name, image, hub_name),
-            callback=self._on_image_built,
+            callback=lambda confirmed, sn=server_name, im=image, hn=hub_name:
+                self._on_build_confirmed(confirmed, sn, im, hn),
         )
 
-    def _on_image_built(self, success: bool) -> None:
-        """Refresh hub status after a build attempt."""
+    def _on_build_confirmed(self, confirmed: bool, server_name: str, image: str, hub_name: str) -> None:
+        """Start a background build if the user confirmed."""
+        if not confirmed:
+            return
+        self._build_logs[image] = []
+        self._build_results.pop(image, None)
+        self._active_builds[image] = True  # mark as pending so ⏳ shows immediately
+        self._refresh_hub()  # show ⏳ Building… immediately
+        self._run_build(server_name, image, hub_name)
+
+    @work(thread=True)
+    def _run_build(self, server_name: str, image: str, hub_name: str) -> None:
+        """Build a Docker/Podman image in a background thread."""
+        import subprocess
+        from fuzzforge_cli.tui.helpers import build_image, find_dockerfile_for_server
+
+        logs = self._build_logs.setdefault(image, [])
+
+        dockerfile = find_dockerfile_for_server(server_name, hub_name)
+        if dockerfile is None:
+            logs.append(f"ERROR: Dockerfile not found for '{server_name}' in hub '{hub_name}'")
+            self._build_results[image] = False
+            self._active_builds.pop(image, None)
+            self.call_from_thread(self._on_build_done, image, False)
+            return
+
+        logs.append(f"Building {image} from {dockerfile.parent}")
+        logs.append("")
+
+        try:
+            proc = build_image(image, dockerfile)
+        except FileNotFoundError as exc:
+            logs.append(f"ERROR: {exc}")
+            self._build_results[image] = False
+            self._active_builds.pop(image, None)
+            self.call_from_thread(self._on_build_done, image, False)
+            return
+
+        self._active_builds[image] = proc  # replace pending marker with actual process
+        self.call_from_thread(self._refresh_hub)  # show ⏳ in table
+
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            logs.append(line.rstrip())
+
+        proc.wait()
+        self._active_builds.pop(image, None)
+        success = proc.returncode == 0
+        self._build_results[image] = success
+        self.call_from_thread(self._on_build_done, image, success)
+
+    def _on_build_done(self, image: str, success: bool) -> None:
+        """Called on the main thread when a background build finishes."""
         self._refresh_hub()
         if success:
-            self.notify("Image built successfully", severity="information")
+            self.notify(f"✓ {image} built successfully", severity="information")
+        else:
+            self.notify(f"✗ {image} build failed — click row for log", severity="error")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
