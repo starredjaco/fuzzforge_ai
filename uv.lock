@@ -469,6 +469,11 @@ provides-extras = ["lints", "tests"]
 name = "fuzzforge-oss"
 version = "1.0.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "fuzzforge-cli" },
+    { name = "fuzzforge-common" },
+    { name = "fuzzforge-mcp" },
+]
 
 [package.optional-dependencies]
 dev = [
@@ -482,7 +487,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fuzzforge-cli", editable = "fuzzforge-cli" },
+    { name = "fuzzforge-common", editable = "fuzzforge-common" },
     { name = "fuzzforge-common", marker = "extra == 'dev'", editable = "fuzzforge-common" },
+    { name = "fuzzforge-mcp", editable = "fuzzforge-mcp" },
     { name = "fuzzforge-mcp", marker = "extra == 'dev'", editable = "fuzzforge-mcp" },
     { name = "fuzzforge-tests", marker = "extra == 'dev'", editable = "fuzzforge-tests" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.0.2" },
