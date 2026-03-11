@@ -14,6 +14,10 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Log
 
 
+class _NoFocusButton(Button):
+    can_focus = False
+
+
 class BuildLogScreen(ModalScreen[None]):
     """Live log viewer for a background build job managed by the app."""
 
@@ -30,10 +34,9 @@ class BuildLogScreen(ModalScreen[None]):
             yield Label("", id="build-status")
             yield Log(id="build-log", auto_scroll=True)
             with Horizontal(classes="dialog-buttons"):
-                yield Button("Close", variant="default", id="btn-close")
+                yield _NoFocusButton("Close", variant="default", id="btn-close")
 
     def on_mount(self) -> None:
-        self.query_one("#btn-close", Button).focus()
         self._flush_log()
         self.set_interval(0.5, self._poll_log)
 

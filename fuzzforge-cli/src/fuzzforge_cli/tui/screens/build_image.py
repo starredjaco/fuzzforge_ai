@@ -14,6 +14,10 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 
 
+class _NoFocusButton(Button):
+    can_focus = False
+
+
 class BuildImageScreen(ModalScreen[bool]):
     """Quick confirmation before starting a background Docker/Podman build."""
 
@@ -38,16 +42,10 @@ class BuildImageScreen(ModalScreen[bool]):
                 id="confirm-text",
             )
             with Horizontal(classes="dialog-buttons"):
-                yield Button("Build", variant="success", id="btn-build")
-                yield Button("Cancel", variant="default", id="btn-cancel")
-
-    def on_mount(self) -> None:
-        # Ensure a widget is focused so both buttons respond to a single click.
-        # Default to Cancel so Build is never pre-selected.
-        self.query_one("#btn-cancel", Button).focus()
+                yield _NoFocusButton("Build", variant="primary", id="btn-build")
+                yield _NoFocusButton("Cancel", variant="default", id="btn-cancel")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        event.stop()
         if event.button.id == "btn-build":
             self.dismiss(True)
         elif event.button.id == "btn-cancel":

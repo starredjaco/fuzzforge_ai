@@ -56,12 +56,16 @@ class SingleClickDataTable(DataTable):
             return self.data_table
 
     async def _on_click(self, event: events.Click) -> None:  # type: ignore[override]
-        """Forward to parent, then post RowClicked for single-click detection."""
+        """Forward to parent, then post RowClicked on every mouse click.
+
+        The hub table is handled exclusively via RowClicked.  RowSelected is
+        intentionally NOT used for the hub table to avoid double-dispatch.
+        """
         await super()._on_click(event)
         meta = event.style.meta
-        if "row" in meta and self.cursor_type == "row":
-            row_index: int = meta["row"]
-            if row_index >= 0:  # skip header row
+        if meta and "row" in meta and self.cursor_type == "row":
+            row_index: int = int(meta["row"])
+            if row_index >= 0:
                 self.post_message(SingleClickDataTable.RowClicked(self, row_index))
 
 
@@ -371,11 +375,14 @@ class FuzzForgeApp(App[None]):
                 self._hub_rows.append((name, image, hub_name, is_ready))
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle Enter-key row selection on the agents table."""
+        """Handle Enter-key row selection (agents table only).
+
+        Hub table uses RowClicked exclusively — wiring it to RowSelected too
+        would cause a double push on every click since Textual 8 fires
+        RowSelected on ALL clicks, not just second-click-on-same-row.
+        """
         if event.data_table.id == "agents-table":
             self._handle_agent_row(event.cursor_row)
-        elif event.data_table.id == "hub-table":
-            self._handle_hub_row(event.cursor_row)
 
     def on_single_click_data_table_row_clicked(
         self, event: SingleClickDataTable.RowClicked
@@ -408,6 +415,10 @@ class FuzzForgeApp(App[None]):
 
     def _handle_hub_row(self, idx: int) -> None:
         """Handle a click on a hub table row."""
+        # Guard: never push two build dialogs at once (double-click protection)
+        if getattr(self, "_build_dialog_open", False):
+            return
+
         if idx < 0 or idx >= len(self._hub_rows):
             return
         row_data = self._hub_rows[idx]
@@ -419,7 +430,11 @@ class FuzzForgeApp(App[None]):
         # If a build is already running, open the live log viewer
         if image in self._active_builds:
             from fuzzforge_cli.tui.screens.build_log import BuildLogScreen
-            self.push_screen(BuildLogScreen(image))
+            self._build_dialog_open = True
+            self.push_screen(
+                BuildLogScreen(image),
+                callback=lambda _: setattr(self, "_build_dialog_open", False),
+            )
             return
 
         if is_ready:
@@ -432,10 +447,15 @@ class FuzzForgeApp(App[None]):
 
         from fuzzforge_cli.tui.screens.build_image import BuildImageScreen
 
+        self._build_dialog_open = True
+
+        def _on_build_dialog_done(confirmed: bool, sn: str = server_name, im: str = image, hn: str = hub_name) -> None:
+            self._build_dialog_open = False
+            self._on_build_confirmed(confirmed, sn, im, hn)
+
         self.push_screen(
             BuildImageScreen(server_name, image, hub_name),
-            callback=lambda confirmed, sn=server_name, im=image, hn=hub_name:
-                self._on_build_confirmed(confirmed, sn, im, hn),
+            callback=_on_build_dialog_done,
         )
 
     def _on_build_confirmed(self, confirmed: bool, server_name: str, image: str, hub_name: str) -> None:
